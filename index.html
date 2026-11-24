@@ -44,6 +44,31 @@ main{max-width:1280px;margin:0 auto;padding:18px 24px 40px}
 .kpi b{font-size:17px}
 .flash{animation:fl 1.2s ease-in-out 3}@keyframes fl{50%{background:#bfeed3}}
 .live{font-weight:600;color:var(--ink)}
+.card a.ttl{color:inherit;text-decoration:none}.card a.ttl:hover b{color:var(--acc)}.card a.ico{text-decoration:none}
+.more{font-size:13px;color:var(--acc);text-decoration:none;font-weight:600}.more:hover{text-decoration:underline}
+.tabs{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:14px}
+.tab{padding:6px 11px;border-radius:9px;border:1px solid var(--line);background:#fff;color:var(--ink);text-decoration:none;font-size:14px;display:inline-flex;align-items:center;gap:5px}
+.tab.on{background:var(--acc);border-color:var(--acc);color:#fff}.tab:hover{border-color:var(--acc)}
+.dhead{display:flex;gap:14px;align-items:center;flex-wrap:wrap;background:#fff;border:1px solid var(--line);border-radius:14px;padding:16px 18px;margin-bottom:16px}
+.dhead h1{margin:0;font-size:22px}.dhead .ico{font-size:30px;width:52px;height:52px;border-radius:13px;background:var(--soft);display:flex;align-items:center;justify-content:center}
+.kpis.big{margin-bottom:16px;grid-template-columns:repeat(auto-fit,minmax(150px,1fr))}.kpis.big .kpi{background:#fff;border:1px solid var(--line)}
+.tbw{overflow-x:auto}
+table.tb{width:100%;border-collapse:collapse;font-size:14px}
+table.tb th{text-align:left;font-size:12px;color:var(--mut);font-weight:600;border-bottom:1px solid var(--line);padding:6px 8px;white-space:nowrap}
+table.tb td{border-bottom:1px dashed var(--line);padding:6px 8px;vertical-align:top}
+table.tb tr:last-child td{border-bottom:0}
+table.tb .num{text-align:right;white-space:nowrap}
+table.tb .bud{font-style:italic;color:var(--mut)}
+.item{padding:8px 0;border-top:1px dashed var(--line)}.item:first-of-type{border-top:0}.item>div{margin:2px 0}
+.barsg{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:18px}
+.bars b{display:block;margin-bottom:6px;font-size:14px}
+.br{display:grid;grid-template-columns:130px 1fr 60px;gap:8px;align-items:center;font-size:13px;margin:3px 0}
+.bl{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.bv{text-align:right;color:var(--mut)}
+.bt{height:9px;background:#eef0f5;border-radius:5px;overflow:hidden}.bt span{display:block;height:100%;background:var(--acc);border-radius:5px}
+h2.cli{font-size:19px;margin:6px 0 12px}
+svg.mc{width:100%;max-width:760px;height:auto}svg.mc text{font-size:11px;fill:var(--mut)}
+.s1{fill:#2f5bea;background:#2f5bea}.s2{fill:#1a9b5b;background:#1a9b5b}.s3{fill:#c3c8d3;background:#c3c8d3}
+.lg{display:inline-block;width:10px;height:10px;border-radius:2px;margin-right:4px;vertical-align:middle}
 .pos{color:var(--ok)}.neg{color:var(--bad)}.wrn{color:var(--warn)}
 .list{margin:0;padding:0;list-style:none;font-size:14px}
 .list li{display:flex;gap:8px;justify-content:space-between;padding:5px 0;border-top:1px dashed var(--line)}
@@ -89,6 +114,8 @@ table.ed input.ic{width:46px;text-align:center}
 </header>
 <main>
   <div id="notice"></div>
+  <div id="detail" hidden></div>
+  <div id="home">
 
   <section class="panel">
     <h2>🚀 Mes apps</h2>
@@ -107,6 +134,7 @@ table.ed input.ic{width:46px;text-align:center}
   </section>
 
   <div class="grid" id="cards"></div>
+  </div>
 </main>
 
 <dialog id="dlg">
@@ -136,7 +164,7 @@ table.ed input.ic{width:46px;text-align:center}
 
 <script>
 'use strict';
-const VERSION = 'V1.1';
+const VERSION = 'V1.2';
 const LS = 'accueil_tonio_v1';
 
 /* ---------- Apps connues ---------- */
@@ -344,6 +372,168 @@ const VIEWS = {
   }
 };
 
+/* ---------- Pages détaillées par app ---------- */
+const sec = (title, body, extra = '') => `<section class="panel"><h2>${title}${extra ? `<span class="muted" style="font-weight:400;margin-left:8px">${extra}</span>` : ''}</h2>${body}</section>`;
+// cellule : texte simple ou {h: html, n: true (aligné à droite), c: classe}
+function tbl(head, rows, empty = 'Rien à afficher.') {
+  if (!rows.length) return `<div class="empty">${empty}</div>`;
+  const cell = (x, th) => { const o = (x && typeof x === 'object') ? x : { h: esc(x ?? '—') }; return `<${th ? 'th' : 'td'} class="${o.n ? 'num' : ''} ${o.c || ''}">${o.h ?? '—'}</${th ? 'th' : 'td'}>`; };
+  return `<div class="tbw"><table class="tb"><thead><tr>${head.map(h => cell(h, true)).join('')}</tr></thead><tbody>${rows.map(r => `<tr>${r.map(x => cell(x)).join('')}</tr>`).join('')}</tbody></table></div>`;
+}
+const N = (h, c = '') => ({ h, n: true, c });
+const H = (h, c = '') => ({ h, c });
+function bars(obj, title) {
+  const arr = Object.entries(obj || {}).sort((a, b) => b[1] - a[1]);
+  if (!arr.length) return '';
+  return `<div class="bars"><b>${esc(title)}</b>${arr.map(([k, v]) => `<div class="br"><span class="bl">${esc(k)}</span><span class="bt"><span style="width:${Math.max(1, v * 100).toFixed(1)}%"></span></span><span class="bv">${pct(v).replace('+', '')}</span></div>`).join('')}</div>`;
+}
+function monthChart(series) { // series: [{name, cls, data:{'01':v,...}}]
+  const M = ['01', '02', '03', '04', '05', '06', '07', '08', '09', '10', '11', '12'], L = 'JFMAMJJASOND';
+  const max = Math.max(1, ...series.flatMap(s => M.map(m => s.data[m] || 0)));
+  const W = 600, Hh = 150, bw = W / 12, n = series.length;
+  let svg = `<svg viewBox="0 0 ${W} ${Hh + 18}" class="mc" role="img">`;
+  M.forEach((m, i) => {
+    series.forEach((s, j) => { const v = s.data[m] || 0, h = v / max * Hh; svg += `<rect class="${s.cls}" x="${i * bw + 6 + j * (bw - 12) / n}" y="${Hh - h}" width="${(bw - 12) / n - 2}" height="${h}"><title>${s.name} ${m} : ${nf0.format(v)} €</title></rect>`; });
+    svg += `<text x="${i * bw + bw / 2}" y="${Hh + 14}" text-anchor="middle">${L[i]}</text>`;
+  });
+  return svg + `</svg><div class="muted">${series.map(s => `<span class="lg ${s.cls}"></span>${esc(s.name)}`).join(' &nbsp; ')}</div>`;
+}
+const STATUT = { en_retard: ['bad', 'en retard'], urgent: ['bad', 'urgent'], bientot: ['warn', 'bientôt'], a_venir: ['', 'à venir'], paye: ['ok', 'payé'], domicilie: ['ok', 'domicilié'], actif: ['ok', 'actif'], expire: ['bad', 'expiré'], rappel: ['warn', 'rappel'], proche: ['warn', 'proche'], valide: ['ok', 'valide'] };
+const chipS = s => { const x = STATUT[s] || ['', s || '—']; return `<span class="tag ${x[0]}">${esc(x[1])}</span>`; };
+const RECUR = { monthly: 'mensuel', yearly: 'annuel', annual: 'annuel', quarterly: 'trimestriel', weekly: 'hebdo', once: 'unique', unique: 'unique' };
+
+const DETAIL = {
+  lifeadmin(d, T) {
+    const m = d.metrics || {};
+    const ech = recs(d, 'echeance').sort((a, b) => (a.date || '9').localeCompare(b.date || '9'));
+    const open = ech.filter(r => !['paye', 'domicilie'].includes(r.status));
+    const mensuel = ech.filter(r => r.data && r.data.recurrence === 'monthly' && r.data.sens !== 'recette').reduce((s, r) => s + (r.amount || 0), 0);
+    const contrats = recs(d, 'contrat').sort((a, b) => ((a.data || {}).limite_preavis || '9').localeCompare((b.data || {}).limite_preavis || '9'));
+    const dem = recs(d, 'demarche').filter(r => r.status !== 'fait' && r.status !== 'done');
+    const docs = recs(d, 'document');
+    const byCat = {};
+    dem.forEach(r => { const c = r.category || 'Autre'; (byCat[c] = byCat[c] || { critique: [], important: [], conseille: [], autre: [] })[['critique', 'important', 'conseille'].includes(r.data && r.data.priorite) ? r.data.priorite : 'autre'].push(r); });
+    const catRows = Object.entries(byCat).sort((a, b) => b[1].critique.length - a[1].critique.length || a[0].localeCompare(b[0]));
+    return `
+    <div class="kpis big">${kpi('À payer (30 j)', eur(m.total_a_payer_30j))}${kpi('Échéances 30 j', m.echeances_30j ?? '—')}${kpi('En retard', m.echeances_en_retard ?? 0, m.echeances_en_retard ? 'neg' : 'pos')}${kpi('Charges mensuelles', eur(mensuel, 0))}${kpi('Contrats', contrats.length)}${kpi('Démarches à faire', dem.length)}</div>
+    ${sec('📅 Échéances à venir', tbl(['Date', 'Statut', 'Intitulé', 'Organisme', N('Montant'), 'Récurrence', 'Catégorie'],
+      open.map(r => [dfr(r.date), H(chipS(r.status)), r.title, (r.data || {}).organisme, N(eur(r.amount)), RECUR[(r.data || {}).recurrence] || (r.data || {}).recurrence || '', r.category])), `${open.length} non réglée(s)`)}
+    ${sec('📝 Contrats', tbl(['Contrat', 'Organisme', N('Montant'), 'Récurrence', 'Fin du contrat', 'Préavis', 'Résilier avant le'],
+      contrats.map(r => { const x = r.data || {}; const soon = x.limite_preavis && x.limite_preavis <= addDays(T, 60); return [r.title, x.organisme, N(eur(r.amount)), RECUR[x.recurrence] || x.recurrence || '', dfr(x.fin_contrat), x.preavis_jours ? x.preavis_jours + ' j' : '—', H(x.limite_preavis ? `<span class="${soon ? 'neg' : ''}">${dfr(x.limite_preavis)}</span>` : '—')]; }), 'Aucun contrat.'))}
+    ${sec('✅ Démarches à faire, par thème', tbl(['Thème', N('Critiques'), N('Importantes'), N('Conseillées'), 'Exemples critiques'],
+      catRows.map(([c, g]) => [c, N(g.critique.length, g.critique.length ? 'neg' : ''), N(g.important.length), N(g.conseille.length + g.autre.length), H(g.critique.slice(0, 3).map(r => esc(r.title)).join(' · ') || '<span class="muted">—</span>')])), `${dem.length} au total`)}
+    ${docs.length ? sec('📄 Documents lisibles par Tonio', `<ul class="list">${docs.map(r => `<li><span class="l">${esc(r.title)}</span><span class="r">${dfr(r.date)}</span></li>`).join('')}</ul>`) : ''}`;
+  },
+
+  'aide-memoire'(d, T) {
+    const m = d.metrics || {};
+    const acts = recs(d, 'action');
+    const open = acts.filter(r => r.status !== 'fait').sort((a, b) => (a.date || '9').localeCompare(b.date || '9'));
+    const done = acts.filter(r => r.status === 'fait');
+    const projets = recs(d, 'projet');
+    const reus = recs(d, 'reunion').sort((a, b) => (b.date || '').localeCompare(a.date || ''));
+    const decs = recs(d, 'decision').sort((a, b) => (b.date || '').localeCompare(a.date || ''));
+    const notes = recs(d, 'note').sort((a, b) => (b.date || '').localeCompare(a.date || ''));
+    const docs = recs(d, 'document');
+    const pr = { high: ['bad', 'haute'], medium: ['warn', 'moyenne'], low: ['', 'basse'] };
+    const st = { a_faire: 'à faire', en_cours: 'en cours', fait: 'fait' };
+    const nl = s => esc(s || '').replace(/\n/g, '<br>');
+    return `
+    <div class="kpis big">${kpi('Tâches ouvertes', open.length)}${kpi('En retard', open.filter(r => r.date && r.date < T).length, 'neg')}${kpi('Échéance 7 j', open.filter(r => r.date && r.date >= T && r.date <= addDays(T, 7)).length, 'wrn')}${kpi('Projets actifs', projets.length)}${kpi('Réunions', reus.length)}${kpi('Éléments privés (non visibles)', (d.excluded || {}).private_items ?? 0)}</div>
+    ${sec('✅ Tâches ouvertes', tbl(['Échéance', 'Priorité', 'Tâche', 'Responsable', 'Projet', 'Statut'],
+      open.map(r => { const x = r.data || {}; const p = pr[x.priorite] || ['', x.priorite || '']; const late = r.date && r.date < T; return [H(r.date ? `<span class="${late ? 'neg' : ''}">${dfr(r.date)}${late ? ' ⚠' : ''}</span>` : '<span class="muted">sans date</span>'), H(p[1] ? `<span class="tag ${p[0]}">${p[1]}</span>` : ''), r.title, x.responsable, x.projet, st[r.status] || r.status]; })), `${open.length} ouverte(s), ${done.length} faite(s)`)}
+    ${sec('📁 Projets', tbl(['Projet', 'Description', N('Tâches ouvertes'), 'Personnes'],
+      projets.map(r => [H(`<b>${esc(r.title)}</b>`), (r.data || {}).description, N(open.filter(a => (a.data || {}).projet === r.title).length), ((r.data || {}).personnes || []).join(', ')]), 'Aucun projet.'))}
+    ${sec('🗓️ Réunions', reus.length ? reus.map(r => { const x = r.data || {}; return `<div class="item"><div><b>${esc(r.title)}</b> <span class="muted">· ${dfr(r.date)}${x.heure ? ' ' + esc(x.heure) : ''}${(x.projets || []).length ? ' · ' + esc(x.projets.join(', ')) : ''}</span></div>${x.resume ? `<div>${nl(x.resume)}</div>` : ''}${(x.participants || []).length ? `<div class="muted">👥 ${esc(x.participants.join(', '))}</div>` : ''}${decs.filter(dd => (dd.data || {}).reunion === r.title).map(dd => `<div>➜ <i>${esc(dd.title)}</i></div>`).join('')}</div>`; }).join('') : '<div class="empty">Aucune réunion.</div>')}
+    ${sec('⚖️ Décisions', tbl(['Date', 'Décision', 'Réunion', 'Projet'], decs.map(r => [dfr(r.date), r.title, (r.data || {}).reunion, ((r.data || {}).projets || []).join(', ')]), 'Aucune décision.'))}
+    ${sec('🗒️ Notes', notes.length ? notes.map(r => `<div class="item"><div><b>${esc(r.title)}</b> <span class="muted">· ${dfr(r.date)}</span> ${(r.tags || []).map(t => `<span class="tag">${esc(t)}</span>`).join('')}</div><div>${nl((r.data || {}).contenu)}</div></div>`).join('') : '<div class="empty">Aucune note.</div>')}
+    ${docs.length ? sec('📄 Documents', tbl(['Date', 'Document', 'Type', 'Résumé'], docs.map(r => [dfr(r.date), r.title, (r.data || {}).type, (r.data || {}).resume]))) : ''}`;
+  },
+
+  bourse(d, T) {
+    const m = d.metrics || {}, rp = m.repartition || {};
+    const pos = recs(d, 'position').sort((a, b) => (b.data.poids || 0) - (a.data.poids || 0));
+    const watch = recs(d, 'surveillance');
+    const al = recs(d, 'alerte');
+    const mv = recs(d, 'mouvement').sort((a, b) => (b.date || '').localeCompare(a.date || ''));
+    const p2 = v => v == null ? '—' : pct(v);
+    const stale = m.cours_le_plus_ancien && m.cours_le_plus_ancien < addDays(T, -2);
+    return `
+    <div class="kpis big">${kpi('Valeur totale', eur(m.valeur_totale, 0))}${kpi('Investi', eur(m.investi, 0))}${kpi('Plus-value latente', `${eur(m.plus_value_latente, 0)} <small>${pct(m.plus_value_latente_pct)}</small>`, cls(m.plus_value_latente))}${kpi('Aujourd’hui', eur(m.variation_jour, 0), cls(m.variation_jour))}${kpi(`Plus-value réalisée ${T.slice(0, 4)}`, eur(m.plus_value_realisee_annee, 0), cls(m.plus_value_realisee_annee))}${kpi('Dividendes', eur(m.dividendes, 0))}${kpi('Liquidités', eur(m.liquidites, 0))}${kpi('Exonération restante', eur(m.exoneration_plus_values_restante, 0))}</div>
+    ${stale ? `<div class="notice">⚠️ Certains cours datent du ${dfr(m.cours_le_plus_ancien)} : ouvrez Mon Portefeuille pour les actualiser.</div>` : ''}
+    ${sec('🧩 Répartition', `<div class="barsg">${bars(rp.classe, 'Classe d’actif')}${bars(rp.region, 'Région')}${bars(rp.secteur, 'Secteur')}${bars(rp.devise, 'Devise')}</div>`)}
+    ${sec('📋 Positions', tbl(['Titre', 'Classe', 'Région', N('Poids'), N('Plus-value'), N('Jour'), N('1 mois'), N('3 mois'), N('RSI'), 'Lecture'],
+      pos.map(r => { const x = r.data; return [H(`<b>${esc(r.title)}</b>${x.symbole ? ` <span class="muted">${esc(x.symbole)}</span>` : ''}`), x.classe_actif, x.region, N(pct(x.poids).replace('+', '')), N(p2(x.plus_value_latente_pct), cls(x.plus_value_latente_pct)), N(p2(x.variation_jour_pct), cls(x.variation_jour_pct)), N(p2(x.perf_1m), cls(x.perf_1m)), N(p2(x.perf_3m), cls(x.perf_3m)), N(x.rsi != null ? nf0.format(x.rsi) : '—', x.rsi >= 70 ? 'wrn' : x.rsi <= 30 ? 'wrn' : ''), x.lecture]; })), `${pos.length} ligne(s)`)}
+    ${sec('🔔 Alertes', tbl(['État', 'Alerte', N('Seuil'), N('Valeur actuelle'), 'Déclenchée le'],
+      al.sort((a, b) => (a.status === 'declenchee' ? 0 : 1) - (b.status === 'declenchee' ? 0 : 1)).map(r => [H(`<span class="tag ${r.status === 'declenchee' ? 'bad' : r.status === 'active' ? 'ok' : ''}">${r.status === 'declenchee' ? 'déclenchée' : r.status}</span>`), r.title, N(r.data.seuil ?? '—'), N(r.data.valeur_actuelle != null ? nf2.format(r.data.valeur_actuelle) : '—'), dfr(r.date)]), 'Aucune alerte.'))}
+    ${sec('⚡ Mouvements inhabituels (30 jours)', tbl(['Date', 'Titre', N('Variation'), N('Variation habituelle'), 'En portefeuille'],
+      mv.map(r => [dfr(r.date), r.title.replace(/\s[-+]?\d.*$/, ''), N(pct(r.data.variation_pct, 2), cls(r.data.variation_pct)), N('± ' + pct(r.data.variation_habituelle_pct, 2).replace('+', '')), r.data.en_portefeuille ? 'oui' : 'surveillé']), 'Aucun mouvement inhabituel.'))}
+    ${sec('👀 Titres surveillés', tbl(['Titre', 'Symbole', N('Cours'), 'Lecture'], watch.map(r => [r.title, r.data.symbole, N(r.data.cours != null ? nf2.format(r.data.cours) : '—'), r.data.lecture]), 'Aucun titre surveillé.'))}
+    <p class="muted">Informations de suivi uniquement : ce n’est pas un conseil en investissement.</p>`;
+  },
+
+  'gl-analysis'(d) {
+    const rs = recs(d, 'client_periode');
+    const clients = [...new Set(rs.map(r => r.data.client || r.title))].sort();
+    const LINES = [['chiffre_affaires_70', 'Chiffre d’affaires (70)'], ['autres_produits_71_74', 'Autres produits (71-74)'], ['achats_60', 'Achats (60)'], ['marge_brute', 'Marge brute'], ['services_61', 'Services et biens divers (61)'], ['remunerations_62', 'Rémunérations (62)'], ['autres_charges_64', 'Autres charges (64)'], ['ebitda', 'EBITDA'], ['amortissements_63', 'Amortissements (63)'], ['resultat_exploitation', 'Résultat d’exploitation'], ['resultat_financier', 'Résultat financier'], ['resultat_exceptionnel', 'Résultat exceptionnel'], ['resultat_avant_impots', 'Résultat avant impôts']];
+    const BOLD = ['chiffre_affaires_70', 'marge_brute', 'ebitda', 'resultat_avant_impots'];
+    return clients.map(c => {
+      const mine = rs.filter(r => (r.data.client || r.title) === c).sort((a, b) => a.data.exercice - b.data.exercice || a.status.localeCompare(b.status));
+      const lab = r => `${r.data.exercice}${r.status !== 'Actuals' ? ' ' + r.status : ''}${(r.data.mois_au - (r.data.mois_du || 1) + 1) < 12 ? ` (${r.data.mois_au - (r.data.mois_du || 1) + 1} m)` : ''}`;
+      const rows = LINES.map(([k, l]) => [H(BOLD.includes(k) ? `<b>${l}</b>` : l), ...mine.map(r => N(keur(r.data[k]), r.status !== 'Actuals' ? 'bud' : ''))]);
+      rows.push([H('<b>Marge EBITDA</b>'), ...mine.map(r => N(pct(r.data.marge_ebitda), r.status !== 'Actuals' ? 'bud' : ''))]);
+      const act = mine.filter(r => r.status === 'Actuals');
+      const ecarts = act.map(a => { const b = mine.find(r => r.status === 'Budget' && r.data.exercice === a.data.exercice); if (!b || (a.data.mois_au - (a.data.mois_du || 1)) < 11) return null; const e = k => (a.data[k] - b.data[k]); const ep = k => b.data[k] ? e(k) / Math.abs(b.data[k]) : null; return [String(a.data.exercice), N(keur(e('chiffre_affaires_70')), cls(e('chiffre_affaires_70'))), N(pct(ep('chiffre_affaires_70'), 0), cls(ep('chiffre_affaires_70'))), N(keur(e('ebitda')), cls(e('ebitda'))), N(pct(ep('ebitda'), 0), cls(ep('ebitda'))), N(keur(e('remunerations_62')), cls(-e('remunerations_62'))), N(keur(e('services_61')), cls(-e('services_61')))]; }).filter(Boolean);
+      const lastA = act[act.length - 1], lastFull = [...act].reverse().find(r => (r.data.mois_au - (r.data.mois_du || 1)) >= 11);
+      const budCur = lastA && mine.find(r => r.status === 'Budget' && r.data.exercice === lastA.data.exercice);
+      const series = [lastFull && { name: 'Réel ' + lastFull.data.exercice, cls: 's1', data: lastFull.data.ca_par_mois || {} }, lastA && lastA !== lastFull && { name: 'Réel ' + lastA.data.exercice, cls: 's2', data: lastA.data.ca_par_mois || {} }, budCur && budCur.data.ca_par_mois && { name: 'Budget ' + budCur.data.exercice, cls: 's3', data: budCur.data.ca_par_mois }].filter(Boolean);
+      return `<h2 class="cli">Client ${esc(c)}</h2>
+      ${sec('📑 Compte de résultat par exercice', tbl(['', ...mine.map(r => N(esc(lab(r)), r.status !== 'Actuals' ? 'bud' : ''))], rows), 'en italique : budget')}
+      ${ecarts.length ? sec('🎯 Réel vs budget (exercices complets)', tbl(['Exercice', N('Écart CA'), N('%'), N('Écart EBITDA'), N('%'), N('Écart rémunérations'), N('Écart services')], ecarts), 'positif = mieux que le budget pour le CA et l’EBITDA') : ''}
+      ${series.length ? sec('📆 Chiffre d’affaires mois par mois', monthChart(series)) : ''}`;
+    }).join('') || '<div class="empty">Aucun client exporté.</div>';
+  },
+
+  bnb(d) {
+    const rs = recs(d, 'societe_exercice');
+    const by = {};
+    rs.forEach(r => { const k = r.data.bce || r.title; (by[k] = by[k] || []).push(r); });
+    const LINES = [['chiffre_affaires', 'Chiffre d’affaires', 'e'], ['ebitda', 'EBITDA', 'e'], ['resultat_net', 'Résultat net', 'e'], ['fonds_propres', 'Fonds propres', 'e'], ['total_bilan', 'Total bilan', 'e'], ['effectif_moyen_etp', 'Effectif (ETP)', 'n'], ['r:marge_ebitda', 'Marge EBITDA', 'p'], ['r:marge_nette', 'Marge nette', 'p'], ['r:solvabilite', 'Solvabilité', 'p'], ['r:liquidite_generale', 'Liquidité générale', 'x'], ['r:roe', 'Rentabilité des fonds propres (ROE)', 'p'], ['r:endettement', 'Endettement (dettes / FP)', 'x'], ['r:dette_nette', 'Dette nette', 'e'], ['r:bfr', 'Besoin en fonds de roulement', 'e']];
+    const val = (x, k) => k.startsWith('r:') ? (x.ratios || {})[k.slice(2)] : x[k];
+    const fmt = (v, t) => v == null ? '—' : t === 'e' ? keur(v) : t === 'p' ? pct(v).replace('+', '') : t === 'x' ? nf2.format(v) : nf0.format(v);
+    return Object.values(by).map(a => {
+      a.sort((x, y) => x.data.exercice - y.data.exercice);
+      const last = a[a.length - 1].data, v = last.valorisation;
+      return `<h2 class="cli">${esc(a[0].title)} <span class="muted" style="font-weight:400">BCE ${esc(last.bce || '')}</span></h2>
+      <div class="kpis big">${kpi(`CA ${last.exercice}`, keur(last.chiffre_affaires))}${kpi('EBITDA', keur(last.ebitda))}${kpi('Résultat net', keur(last.resultat_net), cls(last.resultat_net))}${kpi('Fonds propres', keur(last.fonds_propres))}${v ? kpi('Valorisation', keur(v.valeur)) + kpi('Fourchette', `${keur(v.bas)} – ${keur(v.haut)}`) : ''}</div>
+      ${sec('📑 Comptes et ratios sur plusieurs exercices', tbl(['', ...a.map(r => N(String(r.data.exercice)))], LINES.map(([k, l, t]) => [l, ...a.map(r => N(fmt(val(r.data, k), t)))])), `schéma ${esc(last.schema || '')}`)}
+      ${v && (v.methodes || []).length ? sec(`💶 Valorisation ${last.exercice}`, tbl(['Méthode', N('Résultat')], [...v.methodes.map(x => [x.methode, N(x.calculable ? keur(x.resultat) : '<span class="muted">non calculable</span>')]), [H('<b>Valeur retenue</b>'), N(`<b>${keur(v.valeur)}</b>`)], ...(v.apres_decote ? [['Après décote', N(keur(v.apres_decote))]] : [])])) : ''}`;
+    }).join('') || '<div class="empty">Aucune société enregistrée.</div>';
+  },
+
+  idees(d) {
+    const rs = recs(d, 'idee');
+    const lab = { nouvelle: ['', 'nouvelle'], analysee: ['ok', 'analysée'], creuser: ['ok', 'à creuser'], test: ['warn', 'en test'], lancee: ['ok', 'lancée'], abandon: ['bad', 'abandon'] };
+    const vt = { creuser: 'ok', attente: 'warn', abandonner: 'bad' };
+    const ps = (d.metrics || {}).par_statut || {};
+    return `
+    <div class="kpis big">${kpi('Idées', rs.length)}${kpi('À analyser', rs.filter(r => r.data.a_analyser).length, 'wrn')}${Object.entries(lab).filter(([k]) => ps[k]).map(([k, [, l]]) => kpi(l[0].toUpperCase() + l.slice(1), ps[k])).join('')}</div>
+    ${sec('💡 Toutes les idées', tbl(['Statut', 'Idée', 'Secteur', 'Cible', N('Mon score'), N('Score Tonio'), 'Verdict', 'Analysée le'],
+      rs.map(r => { const x = r.data, a = x.derniere_analyse || {}; const l = lab[r.status] || ['', r.status]; return [H(`<span class="tag ${l[0]}">${l[1]}</span>`), H(`<b>${esc(r.title)}</b>`), x.secteur, x.cible, N(x.score_antoine != null ? x.score_antoine + '/100' : '—'), N(a.score_tonio != null ? a.score_tonio + '/100' : '—'), H(a.verdict ? `<span class="tag ${vt[a.verdict] || ''}">${esc(a.verdict)}</span>` : (x.a_analyser ? '<span class="muted">cette nuit</span>' : '—')), a.date ? dfr(a.date) : '—']; })))}
+    ${sec('📝 Fiches', rs.map(r => { const x = r.data; return `<div class="item"><div><b>${esc(r.title)}</b> <span class="muted">· ajoutée le ${dfr(r.date)}</span></div>${x.description ? `<div>${esc(x.description)}</div>` : '<div class="muted">Pas encore de description.</div>'}${x.pourquoi ? `<div class="muted">Pourquoi moi : ${esc(x.pourquoi)}</div>` : ''}${(x.etapes || []).length ? `<div class="muted">Étapes : ${x.etapes.map(e => esc(typeof e === 'string' ? e : e.titre || e.texte || '')).join(' · ')}</div>` : ''}</div>`; }).join('') || '<div class="empty">Aucune idée.</div>')}`;
+  }
+};
+
+function renderDetail(id) {
+  const s = SOURCES[id], d = DATA[id], l = linkFor(id), T = todayISO();
+  const tabs = `<nav class="tabs"><a href="#" class="tab">🏠 Accueil</a>${ORDER.map(k => `<a href="#${k}" class="tab ${k === id ? 'on' : ''}">${SOURCES[k].icon} ${SOURCES[k].name}${DATA[k] ? ` <span class="dot ${fresh(DATA[k].exported_at)}" style="display:inline-block;width:8px;height:8px"></span>` : ''}</a>`).join('')}</nav>`;
+  let body;
+  if (!d) body = `<div class="panel empty">${SRC ? 'Aucun export trouvé pour cette app dans le dossier Tonio.' : 'Reliez le dossier Tonio pour afficher cette page.'}</div>`;
+  else { try { body = DETAIL[id](d, T); } catch (e) { console.error(e); body = `<div class="panel empty">Export illisible : ${esc(e.message)}</div>`; } }
+  const head = `<div class="dhead"><div class="ico">${s.icon}</div><div style="flex:1;min-width:0"><h1>${s.name}</h1>${d ? `<div class="muted">Sauvegardé <b class="live" data-t="${esc(d.exported_at)}">${ageTxt(d.exported_at)}</b> · export du ${dtfr(d.exported_at)} · ${esc(d.app_version || '')}${CHANGED.has(id) ? ' <span class="tag ok flash">🔄 mis à jour</span>' : ''}</div>${d.summary ? `<div style="margin-top:4px">${esc(d.summary)}</div>` : ''}` : ''}</div>${l && l.url ? `<a class="btn pri" href="${esc(l.url)}" target="_blank" rel="noopener">Ouvrir ${s.name} ↗</a>` : '<button class="btn" data-act="settings">＋ Ajouter le lien</button>'}</div>`;
+  $('#detail').innerHTML = tabs + head + body;
+}
+
 /* ---------- Rendu ---------- */
 function linkFor(id) { return cfg.links.find(l => l.id === id); }
 function renderLinks() {
@@ -379,7 +569,8 @@ function renderCards() {
     }
     const upd = CHANGED.has(id) ? ' <span class="tag ok flash">🔄 mis à jour</span>' : '';
     const foot = d ? `<div class="foot"><span><span class="dot ${fresh(d.exported_at)}" style="display:inline-block;vertical-align:middle"></span> Sauvegardé <b class="live" data-t="${esc(d.exported_at)}">${ageTxt(d.exported_at)}</b> · ${dtfr(d.exported_at)}${upd}</span><span>${esc(d.app_version || '')}</span></div>` : '';
-    return `<article class="card"><div class="top"><div class="ico">${s.icon}</div><div class="ttl"><b>${s.name}</b><small>${s.desc}</small></div>${open}</div>${body}${foot}</article>`;
+    const more = `<a class="more" href="#${id}">Voir la page ${s.name} →</a>`;
+    return `<article class="card"><div class="top"><a class="ico" href="#${id}" title="Page détaillée">${s.icon}</a><a class="ttl" href="#${id}"><b>${s.name}</b><small>${s.desc}</small></a>${open}</div>${body}${more}${foot}</article>`;
   }).join('');
   // À regarder aujourd'hui
   if (!SRC) return;
@@ -398,7 +589,13 @@ function renderAll() {
   document.body.classList.toggle('masked', !!cfg.mask);
   $('#maskBtn').textContent = cfg.mask ? '👁 Afficher les montants' : '👁 Masquer les montants';
   renderLinks(); renderHealth(); renderCards();
+  const id = decodeURIComponent(location.hash.slice(1));
+  const isDetail = !!SOURCES[id];
+  $('#home').hidden = isDetail; $('#detail').hidden = !isDetail;
+  if (isDetail) renderDetail(id);
+  document.title = isDetail ? SOURCES[id].name + ' · Accueil Tonio' : 'Accueil Tonio';
 }
+window.addEventListener('hashchange', () => { renderAll(); window.scrollTo(0, 0); });
 
 /* ---------- Lecture du dossier Tonio ---------- */
 const IDB = {

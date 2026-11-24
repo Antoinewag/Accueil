@@ -46,7 +46,11 @@ main{max-width:1280px;margin:0 auto;padding:18px 24px 40px}
 .live{font-weight:600;color:var(--ink)}
 .card a.ttl{color:inherit;text-decoration:none}.card a.ttl:hover b{color:var(--acc)}.card a.ico{text-decoration:none}
 .more{font-size:13px;color:var(--acc);text-decoration:none;font-weight:600}.more:hover{text-decoration:underline}
-.tabs{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:14px}
+.tabs{position:sticky;top:0;z-index:20;background:rgba(244,245,248,.94);backdrop-filter:blur(6px);border-bottom:1px solid var(--line)}
+.tabsin{max-width:1280px;margin:0 auto;padding:10px 24px;display:flex;gap:6px;overflow-x:auto;scrollbar-width:thin}
+.tab{flex:none}
+footer{max-width:1280px;margin:0 auto;padding:0 24px 24px;color:var(--mut);font-size:12px}
+@media (max-width:520px){.tabsin{padding:8px 14px}}
 .tab{padding:6px 11px;border-radius:9px;border:1px solid var(--line);background:#fff;color:var(--ink);text-decoration:none;font-size:14px;display:inline-flex;align-items:center;gap:5px}
 .tab.on{background:var(--acc);border-color:var(--acc);color:#fff}.tab:hover{border-color:var(--acc)}
 .dhead{display:flex;gap:14px;align-items:center;flex-wrap:wrap;background:#fff;border:1px solid var(--line);border-radius:14px;padding:16px 18px;margin-bottom:16px}
@@ -112,6 +116,7 @@ table.ed input.ic{width:46px;text-align:center}
     </div>
   </div>
 </header>
+<nav class="tabs" id="tabs"></nav>
 <main>
   <div id="notice"></div>
   <div id="detail" hidden></div>
@@ -136,6 +141,7 @@ table.ed input.ic{width:46px;text-align:center}
   <div class="grid" id="cards"></div>
   </div>
 </main>
+<footer>Accueil Tonio <span id="ver"></span> · lecture seule du dossier Tonio · aucune donnée envoyée</footer>
 
 <dialog id="dlg">
   <div class="hd"><b>⚙️ Liens & réglages</b><button class="btn sm" data-act="close">✕</button></div>
@@ -164,7 +170,7 @@ table.ed input.ic{width:46px;text-align:center}
 
 <script>
 'use strict';
-const VERSION = 'V1.2';
+const VERSION = 'V1.3';
 const LS = 'accueil_tonio_v1';
 
 /* ---------- Apps connues ---------- */
@@ -526,12 +532,11 @@ const DETAIL = {
 
 function renderDetail(id) {
   const s = SOURCES[id], d = DATA[id], l = linkFor(id), T = todayISO();
-  const tabs = `<nav class="tabs"><a href="#" class="tab">🏠 Accueil</a>${ORDER.map(k => `<a href="#${k}" class="tab ${k === id ? 'on' : ''}">${SOURCES[k].icon} ${SOURCES[k].name}${DATA[k] ? ` <span class="dot ${fresh(DATA[k].exported_at)}" style="display:inline-block;width:8px;height:8px"></span>` : ''}</a>`).join('')}</nav>`;
   let body;
   if (!d) body = `<div class="panel empty">${SRC ? 'Aucun export trouvé pour cette app dans le dossier Tonio.' : 'Reliez le dossier Tonio pour afficher cette page.'}</div>`;
   else { try { body = DETAIL[id](d, T); } catch (e) { console.error(e); body = `<div class="panel empty">Export illisible : ${esc(e.message)}</div>`; } }
   const head = `<div class="dhead"><div class="ico">${s.icon}</div><div style="flex:1;min-width:0"><h1>${s.name}</h1>${d ? `<div class="muted">Sauvegardé <b class="live" data-t="${esc(d.exported_at)}">${ageTxt(d.exported_at)}</b> · export du ${dtfr(d.exported_at)} · ${esc(d.app_version || '')}${CHANGED.has(id) ? ' <span class="tag ok flash">🔄 mis à jour</span>' : ''}</div>${d.summary ? `<div style="margin-top:4px">${esc(d.summary)}</div>` : ''}` : ''}</div>${l && l.url ? `<a class="btn pri" href="${esc(l.url)}" target="_blank" rel="noopener">Ouvrir ${s.name} ↗</a>` : '<button class="btn" data-act="settings">＋ Ajouter le lien</button>'}</div>`;
-  $('#detail').innerHTML = tabs + head + body;
+  $('#detail').innerHTML = head + body;
 }
 
 /* ---------- Rendu ---------- */
@@ -589,10 +594,12 @@ function renderAll() {
   document.body.classList.toggle('masked', !!cfg.mask);
   $('#maskBtn').textContent = cfg.mask ? '👁 Afficher les montants' : '👁 Masquer les montants';
   renderLinks(); renderHealth(); renderCards();
+  $('#ver').textContent = VERSION;
   const id = decodeURIComponent(location.hash.slice(1));
   const isDetail = !!SOURCES[id];
   $('#home').hidden = isDetail; $('#detail').hidden = !isDetail;
   if (isDetail) renderDetail(id);
+  $('#tabs').innerHTML = `<div class="tabsin"><a href="#" class="tab ${isDetail ? '' : 'on'}">🏠 Accueil</a>${ORDER.map(k => `<a href="#${k}" class="tab ${k === id ? 'on' : ''}">${SOURCES[k].icon} ${SOURCES[k].name}${DATA[k] ? ` <span class="dot ${fresh(DATA[k].exported_at)}" style="display:inline-block;width:8px;height:8px"></span>` : ''}</a>`).join('')}</div>`;
   document.title = isDetail ? SOURCES[id].name + ' · Accueil Tonio' : 'Accueil Tonio';
 }
 window.addEventListener('hashchange', () => { renderAll(); window.scrollTo(0, 0); });

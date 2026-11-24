@@ -1,0 +1,536 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Accueil Tonio</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🏠</text></svg>">
+<style>
+:root{--bg:#f4f5f8;--card:#fff;--ink:#1d2433;--mut:#6b7385;--line:#e4e7ee;--acc:#2f5bea;--ok:#1a9b5b;--warn:#d98a00;--bad:#d23c3c;--soft:#eef2ff}
+*{box-sizing:border-box}
+body{margin:0;font:15px/1.45 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;background:var(--bg);color:var(--ink)}
+header{background:linear-gradient(135deg,#1d2b64,#2f5bea);color:#fff;padding:22px 24px 18px}
+header .row{display:flex;flex-wrap:wrap;gap:12px;align-items:center;justify-content:space-between;max-width:1280px;margin:0 auto}
+header h1{margin:0;font-size:24px}
+header .sub{opacity:.85;font-size:14px;margin-top:2px}
+.btn{border:1px solid var(--line);background:#fff;color:var(--ink);border-radius:9px;padding:7px 12px;font:inherit;font-size:14px;cursor:pointer;text-decoration:none;display:inline-flex;align-items:center;gap:6px;white-space:nowrap}
+.btn:hover{border-color:var(--acc)}
+.btn.pri{background:var(--acc);border-color:var(--acc);color:#fff}
+.btn.ghost{background:rgba(255,255,255,.14);border-color:rgba(255,255,255,.35);color:#fff}
+.btn.sm{padding:4px 9px;font-size:13px}
+.btn[disabled]{opacity:.45;cursor:default}
+main{max-width:1280px;margin:0 auto;padding:18px 24px 40px}
+.notice{background:#fff8e6;border:1px solid #f3d58b;border-radius:12px;padding:12px 14px;margin-bottom:16px;display:flex;gap:12px;align-items:center;flex-wrap:wrap}
+.notice.info{background:var(--soft);border-color:#c9d5ff}
+.panel{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:16px 18px;margin-bottom:18px}
+.panel h2{margin:0 0 10px;font-size:17px}
+.today li{margin:4px 0}
+.today ul{margin:0;padding-left:18px}
+.health{display:flex;flex-wrap:wrap;gap:8px}
+.chip{display:inline-flex;align-items:center;gap:6px;border:1px solid var(--line);border-radius:999px;padding:4px 10px;font-size:13px;background:#fff}
+.dot{width:10px;height:10px;border-radius:50%;background:#c3c8d3;flex:none}
+.dot.ok{background:var(--ok)}.dot.warn{background:var(--warn)}.dot.bad{background:var(--bad)}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(360px,100%),1fr));gap:16px}
+.card{min-width:0;background:var(--card);border:1px solid var(--line);border-radius:14px;padding:16px;display:flex;flex-direction:column;gap:10px}
+.card .top{display:flex;align-items:center;gap:10px}
+.card .ico{font-size:26px;width:42px;height:42px;border-radius:11px;background:var(--soft);display:flex;align-items:center;justify-content:center;flex:none}
+.card .ttl{flex:1;min-width:0}
+.card .ttl b{font-size:16px;display:block}
+.card .ttl small{color:var(--mut)}
+.kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(100px,1fr));gap:8px}
+.kpi{background:#f7f8fb;border-radius:10px;padding:8px 10px}
+.kpi>span{display:block;font-size:12px;color:var(--mut)}
+.kpi small{font-size:12px;font-weight:600}
+.kpi b{font-size:17px}
+.flash{animation:fl 1.2s ease-in-out 3}@keyframes fl{50%{background:#bfeed3}}
+.live{font-weight:600;color:var(--ink)}
+.pos{color:var(--ok)}.neg{color:var(--bad)}.wrn{color:var(--warn)}
+.list{margin:0;padding:0;list-style:none;font-size:14px}
+.list li{display:flex;gap:8px;justify-content:space-between;padding:5px 0;border-top:1px dashed var(--line)}
+.list li:first-child{border-top:0}
+.list .l{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.list .r{flex:none;color:var(--mut)}
+.tag{font-size:11px;border-radius:6px;padding:1px 6px;background:#eef0f5;color:var(--mut);margin-right:4px}
+.tag.bad{background:#fde8e8;color:var(--bad)}.tag.warn{background:#fff3dc;color:#9a6200}.tag.ok{background:#e3f6ec;color:var(--ok)}
+.empty{color:var(--mut);font-size:14px;font-style:italic}
+.foot{font-size:12px;color:var(--mut);display:flex;justify-content:space-between;gap:8px;flex-wrap:wrap;margin-top:auto}
+.links{display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:10px}
+.lk{display:flex;align-items:center;gap:10px;border:1px solid var(--line);border-radius:12px;padding:10px 12px;background:#fff;text-decoration:none;color:var(--ink)}
+.lk:hover{border-color:var(--acc)}
+.lk .ico{font-size:22px}
+.lk small{display:block;color:var(--mut);font-size:12px}
+.lk.off{opacity:.6;border-style:dashed}
+.masked .money{filter:blur(6px)}
+dialog{border:0;border-radius:14px;padding:0;max-width:760px;width:calc(100% - 24px);box-shadow:0 20px 60px rgba(0,0,0,.25)}
+dialog .hd{padding:14px 18px;border-bottom:1px solid var(--line);display:flex;justify-content:space-between;align-items:center}
+dialog .bd{padding:14px 18px;max-height:70vh;overflow:auto}
+dialog .ft{padding:12px 18px;border-top:1px solid var(--line);display:flex;justify-content:space-between;gap:8px}
+table.ed{width:100%;border-collapse:collapse;font-size:14px}
+table.ed td{padding:4px}
+table.ed input{width:100%;padding:6px 8px;border:1px solid var(--line);border-radius:7px;font:inherit;font-size:14px}
+table.ed input.ic{width:46px;text-align:center}
+.muted{color:var(--mut);font-size:13px}
+@media (max-width:520px){header,main{padding-left:14px;padding-right:14px}.grid{grid-template-columns:minmax(0,1fr)}.kpis{grid-template-columns:repeat(2,minmax(0,1fr))}}
+</style>
+</head>
+<body>
+<header>
+  <div class="row">
+    <div>
+      <h1>🏠 Accueil Tonio</h1>
+      <div class="sub" id="hello">—</div>
+    </div>
+    <div style="display:flex;gap:8px;flex-wrap:wrap">
+      <button class="btn ghost" data-act="refresh">🔄 Actualiser</button>
+      <button class="btn ghost" data-act="mask" id="maskBtn">👁 Masquer les montants</button>
+      <button class="btn ghost" data-act="settings">⚙️ Liens & réglages</button>
+    </div>
+  </div>
+</header>
+<main>
+  <div id="notice"></div>
+
+  <section class="panel">
+    <h2>🚀 Mes apps</h2>
+    <div class="links" id="links"></div>
+  </section>
+
+  <section class="panel today" id="todayPanel">
+    <h2>📌 À regarder aujourd'hui</h2>
+    <div id="today" class="empty">Reliez le dossier Tonio pour voir les points d'attention.</div>
+  </section>
+
+  <section class="panel">
+    <h2>🩺 État des sauvegardes Tonio</h2>
+    <div class="health" id="health"></div>
+    <p class="muted" style="margin:10px 0 0">Vert : export de moins de 2 jours · orange : 2 à 7 jours · rouge : plus de 7 jours ou absent. Si une app est orange ou rouge, ouvrez-la et cliquez sur « 💾 Sauvegarder maintenant ». Une app ne réécrit son export que lorsqu’elle est ouverte sur le PC et qu’une donnée a changé.</p>
+  </section>
+
+  <div class="grid" id="cards"></div>
+</main>
+
+<dialog id="dlg">
+  <div class="hd"><b>⚙️ Liens & réglages</b><button class="btn sm" data-act="close">✕</button></div>
+  <div class="bd">
+    <h3 style="margin:0 0 6px;font-size:15px">Liens vers mes apps</h3>
+    <p class="muted" style="margin:0 0 8px">Collez l'adresse GitHub Pages de chaque app (celle de votre favori). Laissez vide pour masquer le bouton « Ouvrir ».</p>
+    <table class="ed" id="edTable"></table>
+    <button class="btn sm" data-act="addLink" style="margin-top:6px">＋ Ajouter un lien</button>
+    <h3 style="margin:18px 0 6px;font-size:15px">Dossier Tonio</h3>
+    <p class="muted" style="margin:0 0 8px" id="dirInfo"></p>
+    <div style="display:flex;gap:8px;flex-wrap:wrap">
+      <button class="btn sm" data-act="pick">📂 Choisir le dossier Tonio</button>
+      <button class="btn sm" data-act="forget">Oublier le dossier</button>
+    </div>
+    <h3 style="margin:18px 0 6px;font-size:15px">Sauvegarde de ces réglages</h3>
+    <p class="muted" style="margin:0 0 8px">Les liens sont gardés dans ce navigateur. Exportez-les pour les reprendre sur un autre appareil.</p>
+    <div style="display:flex;gap:8px;flex-wrap:wrap">
+      <button class="btn sm" data-act="exportCfg">⬇️ Exporter les réglages</button>
+      <button class="btn sm" data-act="importCfg">⬆️ Importer des réglages</button>
+    </div>
+  </div>
+  <div class="ft"><button class="btn sm" data-act="resetLinks">Remettre les liens par défaut</button><button class="btn pri sm" data-act="saveLinks">Enregistrer</button></div>
+</dialog>
+<input type="file" id="fileIn" accept=".json,application/json" multiple hidden>
+<input type="file" id="cfgIn" accept=".json,application/json" hidden>
+
+<script>
+'use strict';
+const VERSION = 'V1.1';
+const LS = 'accueil_tonio_v1';
+
+/* ---------- Apps connues ---------- */
+const SOURCES = {
+  lifeadmin:      { name: 'LifeAdmin',            icon: '🗂️', desc: 'Échéances, contrats, démarches' },
+  'aide-memoire': { name: 'Aide-mémoire',         icon: '🧠', desc: 'Tâches, réunions, décisions' },
+  'gl-analysis':  { name: 'Altesia Finance (GL)', icon: '📊', desc: 'Analyse du GL par client' },
+  bnb:            { name: 'Analyse BNB',          icon: '🏢', desc: 'Comptes publics et valorisation' },
+  bourse:         { name: 'Mon Portefeuille',     icon: '📈', desc: 'Placements et alertes' },
+  idees:          { name: "Incubateur d'idées",   icon: '💡', desc: 'Idées de business et analyses' }
+};
+const ORDER = ['lifeadmin', 'aide-memoire', 'bourse', 'gl-analysis', 'bnb', 'idees'];
+const DEFAULT_LINKS = [
+  { id: 'lifeadmin',    icon: '🗂️', name: 'LifeAdmin',            url: '' },
+  { id: 'aide-memoire', icon: '🧠', name: 'Aide-mémoire',         url: '' },
+  { id: 'bourse',       icon: '📈', name: 'Mon Portefeuille',     url: '' },
+  { id: 'gl-analysis',  icon: '📊', name: 'Altesia Finance (GL)', url: '' },
+  { id: 'bnb',          icon: '🏢', name: 'Analyse BNB',          url: '' },
+  { id: 'idees',        icon: '💡', name: "Incubateur d'idées",   url: '' },
+  { id: 'hr',           icon: '🤝', name: 'HR&Bd Matching',       url: '' },
+  { id: 'tonio',        icon: '🤖', name: 'Tonio (Claude)',       url: 'https://claude.ai/projects' },
+  { id: 'drive',        icon: '☁️', name: 'Google Drive',          url: 'https://drive.google.com/drive/my-drive' },
+  { id: 'agenda',       icon: '📅', name: 'Google Agenda',         url: 'https://calendar.google.com/' }
+];
+
+/* ---------- État ---------- */
+let cfg = loadCfg();
+let DATA = {};            // app -> export
+let SRC = '';             // 'dossier' | 'fichiers'
+let dirHandle = null;
+let CHANGED = new Set();  // apps dont l'export a changé depuis la lecture précédente
+let lastRead = null;
+const $ = s => document.querySelector(s);
+const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+
+function loadCfg() {
+  try { const c = JSON.parse(localStorage.getItem(LS)); if (c && Array.isArray(c.links)) return Object.assign({ mask: false }, c); } catch (e) { }
+  return { links: DEFAULT_LINKS.map(x => ({ ...x })), mask: false };
+}
+function saveCfg() { try { localStorage.setItem(LS, JSON.stringify(cfg)); } catch (e) { } }
+
+/* ---------- Formats ---------- */
+const nf0 = new Intl.NumberFormat('fr-BE', { maximumFractionDigits: 0 });
+const nf2 = new Intl.NumberFormat('fr-BE', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+const eur = (v, d) => v == null || isNaN(v) ? '—' : `<span class="money">${(d === 0 || Math.abs(v) >= 100000 ? nf0 : nf2).format(v)} €</span>`;
+const keur = v => v == null || isNaN(v) ? '—' : `<span class="money">${Math.abs(v) >= 1e6 ? nf2.format(v / 1e6) + ' M€' : Math.abs(v) >= 1e4 ? nf0.format(v / 1e3) + ' k€' : nf0.format(v) + ' €'}</span>`;
+const sgn = v => v > 0 ? '+' : '';
+const pct = (v, d = 1) => v == null || isNaN(v) ? '—' : `${sgn(v)}${(v * 100).toFixed(d).replace('.', ',')} %`;
+const cls = v => v > 0 ? 'pos' : v < 0 ? 'neg' : '';
+const todayISO = () => { const d = new Date(); d.setMinutes(d.getMinutes() - d.getTimezoneOffset()); return d.toISOString().slice(0, 10); };
+const addDays = (iso, n) => { const d = new Date(iso + 'T12:00:00'); d.setDate(d.getDate() + n); return d.toISOString().slice(0, 10); };
+const dfr = iso => { if (!iso) return '—'; const d = new Date(iso.length > 10 ? iso : iso + 'T12:00:00'); return d.toLocaleDateString('fr-BE', { day: '2-digit', month: '2-digit' }); };
+const dtfr = iso => { if (!iso) return '—'; const d = new Date(iso); return d.toLocaleDateString('fr-BE', { day: '2-digit', month: '2-digit', year: 'numeric' }) + ' ' + d.toLocaleTimeString('fr-BE', { hour: '2-digit', minute: '2-digit' }); };
+function ageDays(iso) { if (!iso) return Infinity; return (Date.now() - new Date(iso).getTime()) / 864e5; }
+function fresh(iso) { const a = ageDays(iso); return a <= 2 ? 'ok' : a <= 7 ? 'warn' : 'bad'; }
+function ageTxt(iso) {
+  const a = ageDays(iso); if (!isFinite(a)) return 'aucun export';
+  const min = a * 1440; if (min < 1) return 'à l’instant'; if (min < 60) return `il y a ${Math.floor(min)} min`;
+  const h = a * 24; if (h < 24) return `il y a ${Math.floor(h)} h${min % 60 >= 1 && h < 6 ? ' ' + String(Math.floor(min % 60)).padStart(2, '0') : ''}`;
+  return `il y a ${Math.floor(a)} j`;
+}
+const kpi = (label, val, c = '') => `<div class="kpi"><span>${label}</span><b class="${c}">${val}</b></div>`;
+const recs = (d, t) => (d.records || []).filter(r => r.type === t);
+
+/* ---------- Résumés par app ---------- */
+const VIEWS = {
+  lifeadmin(d, T) {
+    const m = d.metrics || {};
+    const ech = recs(d, 'echeance').filter(r => !['paye', 'domicilie'].includes(r.status)).sort((a, b) => (a.date || '9').localeCompare(b.date || '9'));
+    const late = ech.filter(r => r.status === 'en_retard');
+    const soon = ech.filter(r => r.date && r.date <= addDays(T, 30));
+    const preav = recs(d, 'contrat').filter(r => r.data && r.data.limite_preavis && r.data.limite_preavis <= addDays(T, 60));
+    const dem = recs(d, 'demarche').filter(r => r.status !== 'fait' && r.status !== 'done');
+    const crit = dem.filter(r => r.data && r.data.priorite === 'critique').length;
+    const st = { en_retard: ['bad', 'retard'], urgent: ['bad', 'urgent'], bientot: ['warn', 'bientôt'], a_venir: ['', 'à venir'] };
+    const list = [...late, ...soon.filter(r => r.status !== 'en_retard')].slice(0, 5).map(r => {
+      const s = st[r.status] || ['', r.status || ''];
+      return `<li><span class="l"><span class="tag ${s[0]}">${s[1]}</span>${esc(r.title)}${r.data && r.data.organisme ? ' · ' + esc(r.data.organisme) : ''}</span><span class="r">${dfr(r.date)} · ${eur(r.amount)}</span></li>`;
+    }).join('') + preav.map(r => `<li><span class="l"><span class="tag warn">préavis</span>${esc(r.title)}</span><span class="r">avant le ${dfr(r.data.limite_preavis)}</span></li>`).join('');
+    return {
+      kpis: kpi('À payer (30 j)', eur(m.total_a_payer_30j ?? soon.reduce((s, r) => s + (r.amount || 0), 0))) + kpi('Échéances 30 j', m.echeances_30j ?? soon.length) + kpi('En retard', late.length, late.length ? 'neg' : 'pos') + kpi('Démarches', `${dem.length}${crit ? ` <small class="neg">(${crit} crit.)</small>` : ''}`),
+      list: list || '<li class="empty">Aucune échéance dans les 30 jours.</li>',
+      alerts: [
+        ...late.map(r => `🗂️ En retard : <b>${esc(r.title)}</b> (${dfr(r.date)}, ${eur(r.amount)})`),
+        ...ech.filter(r => r.status !== 'en_retard' && r.date && r.date <= addDays(T, 7)).map(r => `🗂️ À payer d'ici le ${dfr(r.date)} : <b>${esc(r.title)}</b> (${eur(r.amount)})`),
+        ...preav.filter(r => r.data.limite_preavis <= addDays(T, 21)).map(r => `🗂️ Préavis à donner avant le ${dfr(r.data.limite_preavis)} : <b>${esc(r.title)}</b>`)
+      ]
+    };
+  },
+  'aide-memoire'(d, T) {
+    const m = d.metrics || {};
+    const open = recs(d, 'action').filter(r => r.status !== 'fait');
+    const late = open.filter(r => r.date && r.date < T);
+    const wk = open.filter(r => r.date && r.date >= T && r.date <= addDays(T, 7));
+    const sorted = [...open].sort((a, b) => (a.date || '9').localeCompare(b.date || '9'));
+    const pr = { high: ['bad', 'haute'], medium: ['warn', 'moy.'], low: ['', 'basse'] };
+    const list = sorted.slice(0, 5).map(r => {
+      const p = pr[r.data && r.data.priorite] || ['', ''];
+      const lateTag = r.date && r.date < T ? '<span class="tag bad">retard</span>' : '';
+      return `<li><span class="l">${lateTag}${p[1] ? `<span class="tag ${p[0]}">${p[1]}</span>` : ''}${esc(r.title)}</span><span class="r">${r.date ? dfr(r.date) : 'sans date'}${r.data && r.data.responsable ? ' · ' + esc(r.data.responsable.split(' ')[0]) : ''}</span></li>`;
+    }).join('');
+    const reu = recs(d, 'reunion').sort((a, b) => (b.date || '').localeCompare(a.date || ''))[0];
+    const dec = recs(d, 'decision').sort((a, b) => (b.date || '').localeCompare(a.date || '')).slice(0, 2);
+    const extra = (reu ? `<li><span class="l"><span class="tag ok">réunion</span>${esc(reu.title)}</span><span class="r">${dfr(reu.date)}</span></li>` : '') +
+      dec.map(r => `<li><span class="l"><span class="tag">décision</span>${esc(r.title)}</span><span class="r">${dfr(r.date)}</span></li>`).join('');
+    return {
+      kpis: kpi('Tâches ouvertes', m.taches_ouvertes ?? open.length) + kpi('En retard', late.length, late.length ? 'neg' : 'pos') + kpi('Échéance 7 j', wk.length, wk.length ? 'wrn' : '') + kpi('Projets actifs', m.projets_actifs ?? recs(d, 'projet').length),
+      list: (list || '<li class="empty">Aucune tâche ouverte.</li>') + extra,
+      alerts: [
+        ...late.slice(0, 4).map(r => `🧠 Tâche en retard : <b>${esc(r.title)}</b> (prévue le ${dfr(r.date)})`),
+        ...(late.length > 4 ? [`🧠 … et ${late.length - 4} autre(s) tâche(s) en retard`] : []),
+        ...open.filter(r => r.date === T).map(r => `🧠 Pour aujourd'hui : <b>${esc(r.title)}</b>`)
+      ]
+    };
+  },
+  bourse(d, T) {
+    const m = d.metrics || {};
+    const pos = recs(d, 'position');
+    const movers = pos.filter(r => r.data && r.data.variation_jour_pct != null).sort((a, b) => Math.abs(b.data.variation_jour_pct) - Math.abs(a.data.variation_jour_pct)).slice(0, 3);
+    const trig = recs(d, 'alerte').filter(r => r.status === 'declenchee');
+    const moves = recs(d, 'mouvement').filter(r => r.date && r.date >= addDays(T, -3));
+    const stale = m.cours_le_plus_ancien && m.cours_le_plus_ancien < addDays(T, -2);
+    const list = movers.map(r => `<li><span class="l"><span class="tag">jour</span>${esc(r.title)}</span><span class="r ${cls(r.data.variation_jour_pct)}">${pct(r.data.variation_jour_pct, 2)}</span></li>`).join('') +
+      trig.map(r => `<li><span class="l"><span class="tag bad">alerte</span>${esc(r.title)}</span><span class="r">${dfr(r.date)}</span></li>`).join('');
+    return {
+      kpis: kpi('Valeur', eur(m.valeur_totale, 0)) + kpi('Plus-value latente', `${eur(m.plus_value_latente, 0)} <small>${pct(m.plus_value_latente_pct)}</small>`, cls(m.plus_value_latente)) + kpi('Aujourd’hui', eur(m.variation_jour, 0), cls(m.variation_jour)) + kpi('Alertes', m.alertes_declenchees ?? trig.length, (m.alertes_declenchees ?? trig.length) ? 'neg' : ''),
+      list: list || '<li class="empty">Aucun mouvement notable.</li>',
+      note: stale ? `<span class="wrn">⚠️ Cours les plus anciens du ${dfr(m.cours_le_plus_ancien)}</span>` : '',
+      alerts: [
+        ...trig.map(r => `📈 Alerte déclenchée : <b>${esc(r.title)}</b>`),
+        ...moves.slice(0, 3).map(r => `📈 Mouvement inhabituel le ${dfr(r.date)} : <b>${esc(r.title)}</b>`),
+        ...(stale ? ['📈 Cours pas à jour : ouvrez Mon Portefeuille pour les actualiser'] : [])
+      ]
+    };
+  },
+  'gl-analysis'(d) {
+    const rs = recs(d, 'client_periode');
+    const clients = [...new Set(rs.map(r => r.data.client || r.title))].sort();
+    const rows = clients.map(c => {
+      const mine = rs.filter(r => (r.data.client || r.title) === c);
+      const act = mine.filter(r => r.status === 'Actuals').sort((a, b) => b.data.exercice - a.data.exercice);
+      const full = act.find(r => (r.data.mois_au || 12) - (r.data.mois_du || 1) >= 11) || act[0];
+      const cur = act[0];
+      const bud = full && mine.find(r => r.status === 'Budget' && r.data.exercice === full.data.exercice);
+      return { c, full, cur, bud };
+    });
+    const main = rows[0] || {};
+    const f = main.full && main.full.data, b = main.bud && main.bud.data;
+    const list = rows.map(({ c, full, cur, bud }) => {
+      const fd = full && full.data;
+      const ecart = fd && bud ? (fd.ebitda - bud.data.ebitda) / Math.abs(bud.data.ebitda || 1) : null;
+      let li = `<li><span class="l"><b>${esc(c)}</b> · ${fd ? fd.exercice : '—'} : CA ${keur(fd && fd.chiffre_affaires_70)} · EBITDA ${keur(fd && fd.ebitda)}</span><span class="r ${cls(ecart)}">${ecart != null ? 'vs budget ' + pct(ecart, 0) : ''}</span></li>`;
+      if (cur && full && cur !== full) li += `<li><span class="l">&nbsp;&nbsp;↳ ${cur.data.exercice} en cours (${cur.data.mois_au - (cur.data.mois_du || 1) + 1} mois) : CA ${keur(cur.data.chiffre_affaires_70)} · EBITDA ${keur(cur.data.ebitda)}</span><span class="r">${pct(cur.data.marge_ebitda)}</span></li>`;
+      return li;
+    }).join('');
+    const ecartMain = f && b ? (f.ebitda - b.ebitda) / Math.abs(b.ebitda || 1) : null;
+    return {
+      kpis: kpi('Clients', clients.length) + kpi(`CA ${f ? f.exercice : ''}`, keur(f && f.chiffre_affaires_70)) + kpi('EBITDA', keur(f && f.ebitda)) + kpi('Marge EBITDA', f ? pct(f.marge_ebitda) : '—') + (b ? kpi('EBITDA vs budget', pct(ecartMain, 0), cls(ecartMain)) : ''),
+      list: list || '<li class="empty">Aucun client exporté.</li>',
+      note: clients.length > 1 ? `Chiffres clés : ${esc(clients[0])}` : '',
+      alerts: rows.filter(r => r.full && r.bud && (r.full.data.ebitda - r.bud.data.ebitda) / Math.abs(r.bud.data.ebitda || 1) < -0.1).map(r => `📊 ${esc(r.c)} : EBITDA ${r.full.data.exercice} sous le budget (${pct((r.full.data.ebitda - r.bud.data.ebitda) / Math.abs(r.bud.data.ebitda || 1), 0)})`)
+    };
+  },
+  bnb(d) {
+    const rs = recs(d, 'societe_exercice');
+    const by = {};
+    rs.forEach(r => { const k = r.data.bce || r.title; (by[k] = by[k] || []).push(r); });
+    const socs = Object.values(by).map(a => a.sort((x, y) => y.data.exercice - x.data.exercice));
+    const list = socs.slice(0, 6).map(a => {
+      const l = a[0].data, p = a[1] && a[1].data;
+      const g = p && p.chiffre_affaires ? l.chiffre_affaires / p.chiffre_affaires - 1 : null;
+      const v = l.valorisation;
+      return `<li><span class="l"><b>${esc(a[0].title)}</b> · ${l.exercice} : CA ${keur(l.chiffre_affaires)}${g != null ? ` <small class="${cls(g)}">${pct(g, 0)}</small>` : ''} · EBITDA ${keur(l.ebitda)}</span><span class="r">${v && v.valeur ? 'valo ' + keur(v.valeur) : ''}</span></li>`;
+    }).join('');
+    const one = socs.length === 1 ? socs[0][0].data : null;
+    const v = one && one.valorisation;
+    return {
+      kpis: kpi('Sociétés', socs.length) + kpi('Exercices', rs.length) + (one ? kpi('Résultat net', keur(one.resultat_net), cls(one.resultat_net)) + kpi('Valorisation', v ? keur(v.valeur) : '—') : ''),
+      list: list || '<li class="empty">Aucune société enregistrée.</li>',
+      note: v && v.bas ? `Fourchette de valorisation : ${keur(v.bas)} – ${keur(v.haut)}` : '',
+      alerts: []
+    };
+  },
+  idees(d) {
+    const m = d.metrics || {};
+    const rs = recs(d, 'idee');
+    const ps = m.par_statut || {};
+    const lab = { nouvelle: 'nouvelle', analysee: 'analysée', creuser: 'à creuser', test: 'en test', lancee: 'lancée', abandon: 'abandon' };
+    const score = r => { const a = r.data && r.data.derniere_analyse; return (a && a.score_tonio) ?? r.data.score_antoine ?? null; };
+    const recent = rs.filter(r => r.data && r.data.derniere_analyse && r.data.derniere_analyse.date).sort((a, b) => b.data.derniere_analyse.date.localeCompare(a.data.derniere_analyse.date));
+    const best = [...rs].filter(r => score(r) != null).sort((a, b) => score(b) - score(a));
+    const show = (best.length ? best : [...rs].sort((a, b) => (b.date || '').localeCompare(a.date || ''))).slice(0, 4);
+    const vt = { creuser: 'ok', attente: 'warn', abandonner: 'bad' };
+    const list = show.map(r => {
+      const a = r.data.derniere_analyse;
+      return `<li><span class="l"><span class="tag ${a && a.verdict ? vt[a.verdict] || '' : ''}">${a && a.verdict ? esc(a.verdict) : lab[r.status] || esc(r.status)}</span>${esc(r.title)}</span><span class="r">${score(r) != null ? score(r) + '/100' : r.data.a_analyser ? 'à analyser' : ''}</span></li>`;
+    }).join('');
+    const statTxt = Object.entries(ps).filter(([, n]) => n).map(([k, n]) => `${n} ${lab[k] || k}`).join(' · ');
+    return {
+      kpis: kpi('Idées', m.idees ?? rs.length) + kpi('À analyser', m.a_analyser ?? rs.filter(r => r.data.a_analyser).length, (m.a_analyser) ? 'wrn' : '') + kpi('À creuser', ps.creuser || 0, ps.creuser ? 'pos' : '') + kpi('Meilleur score', best[0] ? score(best[0]) + '/100' : '—'),
+      list: list || '<li class="empty">Aucune idée.</li>',
+      note: statTxt,
+      alerts: recent.filter(r => r.data.derniere_analyse.date >= addDays(todayISO(), -1)).map(r => `💡 Nouvelle analyse : <b>${esc(r.title.length > 70 ? r.title.slice(0, 70) + '…' : r.title)}</b> → ${esc(r.data.derniere_analyse.verdict || '')}`)
+    };
+  }
+};
+
+/* ---------- Rendu ---------- */
+function linkFor(id) { return cfg.links.find(l => l.id === id); }
+function renderLinks() {
+  $('#links').innerHTML = cfg.links.map(l => {
+    const src = SOURCES[l.id];
+    const d = DATA[l.id];
+    const sub = d ? `<span class="dot ${fresh(d.exported_at)}" style="display:inline-block;width:8px;height:8px;margin-right:4px"></span>${ageTxt(d.exported_at)}` : src ? src.desc : (l.url ? new URL(l.url, location.href).hostname : '');
+    return l.url
+      ? `<a class="lk" href="${esc(l.url)}" target="_blank" rel="noopener"><span class="ico">${esc(l.icon || '🔗')}</span><span><b>${esc(l.name)}</b><small>${sub}</small></span></a>`
+      : `<a class="lk off" href="#" data-act="settings"><span class="ico">${esc(l.icon || '🔗')}</span><span><b>${esc(l.name)}</b><small>＋ ajouter le lien</small></span></a>`;
+  }).join('');
+}
+function renderHealth() {
+  $('#health').innerHTML = ORDER.map(id => {
+    const d = DATA[id], s = SOURCES[id];
+    const st = d ? fresh(d.exported_at) : (SRC ? 'bad' : '');
+    return `<span class="chip" title="${d ? 'Export du ' + dtfr(d.exported_at) : 'Pas d’export lu'}"><span class="dot ${st}"></span>${s.icon} ${s.name} · ${d ? ageTxt(d.exported_at) : SRC ? 'absent' : '—'}</span>`;
+  }).join('');
+}
+function renderCards() {
+  const T = todayISO();
+  const all = [];
+  $('#cards').innerHTML = ORDER.map(id => {
+    const s = SOURCES[id], d = DATA[id], l = linkFor(id);
+    const open = l && l.url ? `<a class="btn sm pri" href="${esc(l.url)}" target="_blank" rel="noopener">Ouvrir ↗</a>` : `<button class="btn sm" data-act="settings">＋ Lien</button>`;
+    let body;
+    if (!d) body = `<div class="empty">${SRC ? 'Aucun export trouvé dans Tonio/' + id + '/.' : 'Reliez le dossier Tonio pour voir le résumé.'}</div>`;
+    else {
+      let v;
+      try { v = VIEWS[id](d, T); } catch (e) { console.error(id, e); v = { kpis: '', list: `<li class="empty">Export illisible (${esc(e.message)})</li>`, alerts: [] }; }
+      (v.alerts || []).forEach(a => all.push({ id, a }));
+      body = `<div class="kpis">${v.kpis}</div>${d.summary ? `<div class="muted">${esc(d.summary)}</div>` : ''}<ul class="list">${v.list}</ul>${v.note ? `<div class="muted">${v.note}</div>` : ''}`;
+    }
+    const upd = CHANGED.has(id) ? ' <span class="tag ok flash">🔄 mis à jour</span>' : '';
+    const foot = d ? `<div class="foot"><span><span class="dot ${fresh(d.exported_at)}" style="display:inline-block;vertical-align:middle"></span> Sauvegardé <b class="live" data-t="${esc(d.exported_at)}">${ageTxt(d.exported_at)}</b> · ${dtfr(d.exported_at)}${upd}</span><span>${esc(d.app_version || '')}</span></div>` : '';
+    return `<article class="card"><div class="top"><div class="ico">${s.icon}</div><div class="ttl"><b>${s.name}</b><small>${s.desc}</small></div>${open}</div>${body}${foot}</article>`;
+  }).join('');
+  // À regarder aujourd'hui
+  if (!SRC) return;
+  const staleApps = ORDER.filter(id => !DATA[id] || fresh(DATA[id].exported_at) !== 'ok');
+  const items = all.map(x => x.a);
+  if (staleApps.length) items.push(`🩺 Sauvegarde à refaire : ${staleApps.map(id => SOURCES[id].name).join(', ')}`);
+  $('#today').className = items.length ? '' : 'empty';
+  $('#today').innerHTML = items.length ? `<ul>${items.map(i => `<li>${i}</li>`).join('')}</ul>` : '✅ Rien d’urgent : pas de retard, pas d’alerte.';
+}
+function renderNotice(html, kind = '') { $('#notice').innerHTML = html ? `<div class="notice ${kind}">${html}</div>` : ''; }
+function renderAll() {
+  const d = new Date();
+  const h = d.getHours();
+  $('#hello').textContent = `${h < 12 ? 'Bonjour' : h < 18 ? 'Bon après-midi' : 'Bonsoir'} Antoine · ${d.toLocaleDateString('fr-BE', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}`;
+  $('#hello').innerHTML = esc($('#hello').textContent) + (SRC === 'dossier' ? ' · dossier Tonio relu <span id="readAgo">à l’instant</span> (chaque minute)' : SRC ? ' · fichiers chargés à la main' : '');
+  document.body.classList.toggle('masked', !!cfg.mask);
+  $('#maskBtn').textContent = cfg.mask ? '👁 Afficher les montants' : '👁 Masquer les montants';
+  renderLinks(); renderHealth(); renderCards();
+}
+
+/* ---------- Lecture du dossier Tonio ---------- */
+const IDB = {
+  open() { return new Promise((res, rej) => { const r = indexedDB.open('accueil_tonio_fs', 1); r.onupgradeneeded = () => r.result.createObjectStore('h'); r.onsuccess = () => res(r.result); r.onerror = () => rej(r.error); }); },
+  async get(k) { const db = await this.open(); return new Promise((res, rej) => { const q = db.transaction('h').objectStore('h').get(k); q.onsuccess = () => res(q.result); q.onerror = () => rej(q.error); }); },
+  async set(k, v) { const db = await this.open(); return new Promise((res, rej) => { const q = db.transaction('h', 'readwrite').objectStore('h').put(v, k); q.onsuccess = () => res(); q.onerror = () => rej(q.error); }); },
+  async del(k) { const db = await this.open(); return new Promise((res, rej) => { const q = db.transaction('h', 'readwrite').objectStore('h').delete(k); q.onsuccess = () => res(); q.onerror = () => rej(q.error); }); }
+};
+const fsOK = 'showDirectoryPicker' in window;
+
+async function pickDir() {
+  if (!fsOK) { $('#fileIn').click(); return; }
+  try {
+    const h = await window.showDirectoryPicker({ id: 'tonio', mode: 'read' });
+    if (/coffre/i.test(h.name)) { alert('Ce dossier s’appelle « ' + h.name + ' ». Choisissez le dossier Tonio, jamais le Coffre.'); return; }
+    if (!/tonio/i.test(h.name) && !confirm('Le dossier choisi s’appelle « ' + h.name + ' » et non « Tonio ». Continuer quand même ?')) return;
+    dirHandle = h;
+    try { await IDB.set('tonio', h); } catch (e) { console.warn('Dossier non mémorisé', e); }
+    await readDir();
+  } catch (e) { if (e.name !== 'AbortError') alert('Impossible d’ouvrir le dossier : ' + e.message); }
+}
+async function readJSON(dir, app) {
+  try {
+    const sub = await dir.getDirectoryHandle(app);
+    const fh = await sub.getFileHandle(app + '_latest.json');
+    const j = JSON.parse(await (await fh.getFile()).text());
+    return j && j.tonio_format ? j : null;
+  } catch (e) { return null; }
+}
+async function readDir() {
+  if (!dirHandle) return;
+  const p = await dirHandle.queryPermission({ mode: 'read' });
+  if (p !== 'granted') {
+    renderNotice(`🔐 Le navigateur demande de confirmer l’accès au dossier <b>${esc(dirHandle.name)}</b>. <button class="btn pri sm" data-act="grant">Autoriser la lecture</button>`, 'info');
+    return;
+  }
+  const out = {};
+  await Promise.all(ORDER.map(async id => { const j = await readJSON(dirHandle, id); if (j) out[id] = j; }));
+  const prev = DATA;
+  CHANGED = new Set(SRC === 'dossier' ? Object.keys(out).filter(id => !prev[id] || prev[id].exported_at !== out[id].exported_at) : []);
+  DATA = out; SRC = 'dossier'; lastRead = new Date();
+  renderNotice(Object.keys(out).length ? '' : `Aucun fichier <code>*_latest.json</code> trouvé dans <b>${esc(dirHandle.name)}</b>. Vérifiez que vous avez choisi le dossier Tonio (celui qui contient lifeadmin, bourse…).`);
+  renderAll();
+}
+async function grant() {
+  if (!dirHandle) return;
+  const p = await dirHandle.requestPermission({ mode: 'read' });
+  if (p === 'granted') { renderNotice(''); await readDir(); }
+}
+async function readFiles(files) {
+  const out = { ...DATA };
+  for (const f of files) {
+    try { const j = JSON.parse(await f.text()); if (j && j.tonio_format && SOURCES[j.app]) { if (!out[j.app] || (j.exported_at || '') > (out[j.app].exported_at || '')) out[j.app] = j; } } catch (e) { }
+  }
+  DATA = out; SRC = SRC || 'fichiers';
+  renderNotice(Object.keys(out).length ? `📄 ${Object.keys(out).length} export(s) chargé(s) depuis des fichiers. Ils ne sont pas enregistrés : rechargez-les à la prochaine ouverture.` : 'Aucun export Tonio reconnu dans ces fichiers.', 'info');
+  renderAll();
+}
+async function init() {
+  renderAll();
+  if (fsOK) {
+    try { dirHandle = await IDB.get('tonio'); } catch (e) { }
+    if (dirHandle) await readDir();
+    else renderNotice(`👋 Première ouverture : reliez le dossier <b>Mon Drive › Tonio</b> pour afficher les résumés de vos apps. Seule la lecture est demandée ; rien n’est modifié. <button class="btn pri sm" data-act="pick">📂 Choisir le dossier Tonio</button>`, 'info');
+  } else {
+    renderNotice(`📱 Sur cet appareil, le navigateur ne peut pas relier un dossier. Les liens fonctionnent ; pour les résumés, choisissez les fichiers <code>*_latest.json</code> depuis Drive. <button class="btn pri sm" data-act="files">📄 Choisir les fichiers</button>`, 'info');
+  }
+}
+
+/* ---------- Réglages ---------- */
+let draft = [];
+function openSettings() {
+  draft = cfg.links.map(l => ({ ...l }));
+  drawEd();
+  $('#dirInfo').innerHTML = !fsOK ? 'Ce navigateur ne permet pas de relier un dossier (utilisez Chrome ou Edge sur PC).' : dirHandle ? `Dossier relié : <b>${esc(dirHandle.name)}</b> (lecture seule).` : 'Aucun dossier relié.';
+  $('#dlg').showModal();
+}
+function drawEd() {
+  $('#edTable').innerHTML = draft.map((l, i) => `<tr><td style="width:56px"><input class="ic" data-i="${i}" data-k="icon" value="${esc(l.icon)}"></td><td style="width:30%"><input data-i="${i}" data-k="name" value="${esc(l.name)}" placeholder="Nom"></td><td><input data-i="${i}" data-k="url" value="${esc(l.url)}" placeholder="https://…"></td><td style="width:84px;white-space:nowrap"><button class="btn sm" data-act="up" data-i="${i}" title="Monter">↑</button>${SOURCES[l.id] ? '' : `<button class="btn sm" data-act="del" data-i="${i}" title="Supprimer">✕</button>`}</td></tr>`).join('');
+}
+function syncDraft() { document.querySelectorAll('#edTable input').forEach(inp => { draft[+inp.dataset.i][inp.dataset.k] = inp.value.trim(); }); }
+function saveLinks() {
+  syncDraft();
+  for (const l of draft) if (l.url && !/^https?:\/\//i.test(l.url)) { alert('L’adresse de « ' + l.name + ' » doit commencer par https://'); return; }
+  cfg.links = draft.filter(l => l.name || l.url); saveCfg(); $('#dlg').close(); renderAll();
+}
+function exportCfg() {
+  const blob = new Blob([JSON.stringify({ format: 'accueil-tonio-reglages', version: VERSION, links: cfg.links }, null, 2)], { type: 'application/json' });
+  const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = 'accueil_tonio_reglages.json'; a.click(); setTimeout(() => URL.revokeObjectURL(a.href), 1000);
+}
+async function importCfg(f) {
+  try { const j = JSON.parse(await f.text()); if (!Array.isArray(j.links)) throw new Error('format inconnu'); cfg.links = j.links.map(l => ({ id: String(l.id || 'l' + Math.random().toString(36).slice(2, 8)), icon: String(l.icon || '🔗'), name: String(l.name || ''), url: String(l.url || '') })); saveCfg(); draft = cfg.links.map(l => ({ ...l })); drawEd(); renderAll(); }
+  catch (e) { alert('Fichier de réglages illisible : ' + e.message); }
+}
+
+/* ---------- Actions ---------- */
+document.addEventListener('click', async e => {
+  const b = e.target.closest('[data-act]'); if (!b) return;
+  const act = b.dataset.act;
+  if (b.tagName === 'A' && act) e.preventDefault();
+  const i = +b.dataset.i;
+  switch (act) {
+    case 'refresh': if (dirHandle) await readDir(); else if (fsOK) await pickDir(); else $('#fileIn').click(); break;
+    case 'pick': await pickDir(); if ($('#dlg').open) openSettings(); break;
+    case 'files': $('#fileIn').click(); break;
+    case 'grant': await grant(); break;
+    case 'mask': cfg.mask = !cfg.mask; saveCfg(); renderAll(); break;
+    case 'settings': openSettings(); break;
+    case 'close': $('#dlg').close(); break;
+    case 'addLink': syncDraft(); draft.push({ id: 'l' + Date.now().toString(36), icon: '🔗', name: '', url: '' }); drawEd(); break;
+    case 'del': syncDraft(); draft.splice(i, 1); drawEd(); break;
+    case 'up': syncDraft(); if (i > 0) { [draft[i - 1], draft[i]] = [draft[i], draft[i - 1]]; drawEd(); } break;
+    case 'saveLinks': saveLinks(); break;
+    case 'resetLinks': if (confirm('Remettre la liste de liens par défaut ? Vos adresses saisies seront effacées.')) { draft = DEFAULT_LINKS.map(x => ({ ...x })); drawEd(); } break;
+    case 'forget': await IDB.del('tonio'); dirHandle = null; DATA = {}; SRC = ''; renderAll(); openSettings(); break;
+    case 'exportCfg': syncDraft(); cfg.links = draft; saveCfg(); exportCfg(); break;
+    case 'importCfg': $('#cfgIn').click(); break;
+  }
+});
+$('#fileIn').addEventListener('change', e => { readFiles([...e.target.files]); e.target.value = ''; });
+$('#cfgIn').addEventListener('change', e => { if (e.target.files[0]) importCfg(e.target.files[0]); e.target.value = ''; });
+// Relecture automatique quand on revient sur l'onglet, et toutes les 5 minutes
+document.addEventListener('visibilitychange', () => { if (!document.hidden && SRC === 'dossier') readDir(); });
+// Relecture du dossier chaque minute (6 petits fichiers locaux : sans coût)
+setInterval(() => { if (!document.hidden && SRC === 'dossier') readDir(); }, 60 * 1000);
+// Compteurs « il y a X min » mis à jour en direct, sans relire les fichiers
+function tick() {
+  document.querySelectorAll('.live').forEach(el => { el.textContent = ageTxt(el.dataset.t); });
+  if (lastRead) { const s = Math.round((Date.now() - lastRead) / 1000); const el = $('#readAgo'); if (el) el.textContent = s < 5 ? 'à l’instant' : s < 60 ? `il y a ${s} s` : `il y a ${Math.floor(s / 60)} min`; }
+}
+setInterval(tick, 15 * 1000);
+init();
+</script>
+</body>
+</html>

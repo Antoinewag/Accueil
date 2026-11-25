@@ -173,6 +173,9 @@ table.ed input.ic{width:46px;text-align:center}
     <p class="muted" style="margin:0 0 8px">Collez l'adresse GitHub Pages de chaque app (celle de votre favori). Laissez vide pour masquer le bouton « Ouvrir ».</p>
     <table class="ed" id="edTable"></table>
     <button class="btn sm" data-act="addLink" style="margin-top:6px">＋ Ajouter un lien</button>
+    <h3 style="margin:18px 0 6px;font-size:15px">Ouverture des apps</h3>
+    <label class="muted" style="display:flex;gap:8px;align-items:flex-start;margin:4px 0"><input type="radio" name="ouvrir" value="app" data-ouvrir> <span><b>Dans l’application installée</b> (fenêtre de l’app, si vous l’avez installée depuis Chrome ou Edge). Chaque ouverture peut créer une nouvelle fenêtre.</span></label>
+    <label class="muted" style="display:flex;gap:8px;align-items:flex-start;margin:4px 0 0"><input type="radio" name="ouvrir" value="onglet" data-ouvrir> <span><b>Dans un onglet du navigateur</b>, un par app, réutilisé à chaque fois (pas de rechargement ni de code redemandé).</span></label>
     <h3 style="margin:18px 0 6px;font-size:15px">Dossier Tonio</h3>
     <p class="muted" style="margin:0 0 8px" id="dirInfo"></p>
     <div style="display:flex;gap:8px;flex-wrap:wrap">
@@ -200,7 +203,7 @@ table.ed input.ic{width:46px;text-align:center}
 
 <script>
 'use strict';
-const VERSION = 'V1.6';
+const VERSION = 'V1.7';
 const LS = 'accueil_tonio_v1';
 
 /* ---------- Apps connues ---------- */
@@ -237,8 +240,8 @@ const $ = s => document.querySelector(s);
 const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 
 function loadCfg() {
-  try { const c = JSON.parse(localStorage.getItem(LS)); if (c && Array.isArray(c.links)) return Object.assign({ mask: false }, c); } catch (e) { }
-  return { links: DEFAULT_LINKS.map(x => ({ ...x })), mask: false };
+  try { const c = JSON.parse(localStorage.getItem(LS)); if (c && Array.isArray(c.links)) return Object.assign({ mask: false, ouvrir: 'app' }, c); } catch (e) { }
+  return { links: DEFAULT_LINKS.map(x => ({ ...x })), mask: false, ouvrir: 'app' };
 }
 function saveCfg() { try { localStorage.setItem(LS, JSON.stringify(cfg)); } catch (e) { } }
 
@@ -583,7 +586,7 @@ function renderDetail(id) {
   let body;
   if (!d) body = `<div class="panel empty">${SRC ? 'Aucun export trouvé pour cette app dans le dossier Tonio.' : 'Reliez le dossier Tonio pour afficher cette page.'}</div>`;
   else { try { body = DETAIL[id](d, T); } catch (e) { console.error(e); body = `<div class="panel empty">Export illisible : ${esc(e.message)}</div>`; } }
-  const head = `<div class="dhead"><div class="ico">${s.icon}</div><div style="flex:1;min-width:0"><h1>${s.name}</h1>${d ? `<div class="muted">Sauvegardé <b class="live" data-t="${esc(d.exported_at)}">${ageTxt(d.exported_at)}</b> · export du ${dtfr(d.exported_at)} · ${esc(d.app_version || '')}${CHANGED.has(id) ? ' <span class="tag ok flash">🔄 mis à jour</span>' : ''}</div>${d.summary ? `<div style="margin-top:4px">${esc(d.summary)}</div>` : ''}` : ''}</div>${l && l.url ? `<a class="btn pri" href="${esc(l.url)}" target="tonio_${id}">Ouvrir ${s.name} ↗</a>` : '<button class="btn" data-act="settings">＋ Ajouter le lien</button>'}</div>`;
+  const head = `<div class="dhead"><div class="ico">${s.icon}</div><div style="flex:1;min-width:0"><h1>${s.name}</h1>${d ? `<div class="muted">Sauvegardé <b class="live" data-t="${esc(d.exported_at)}">${ageTxt(d.exported_at)}</b> · export du ${dtfr(d.exported_at)} · ${esc(d.app_version || '')}${CHANGED.has(id) ? ' <span class="tag ok flash">🔄 mis à jour</span>' : ''}</div>${d.summary ? `<div style="margin-top:4px">${esc(d.summary)}</div>` : ''}` : ''}</div>${l && l.url ? `<a class="btn pri" href="${esc(l.url)}" ${tgt(id)}>Ouvrir ${s.name} ↗</a>` : '<button class="btn" data-act="settings">＋ Ajouter le lien</button>'}</div>`;
   $('#detail').innerHTML = head + `<p class="hint">💡 Double-clic sur une ligne, un chiffre ou une carte (ou clic sur ↗) : l’app s’ouvre directement au bon endroit.</p>` + body;
   $('#detail').dataset.app = id;
 }
@@ -706,6 +709,9 @@ async function journalFromFiles(list) {
 
 /* ---------- Rendu ---------- */
 function linkFor(id) { return cfg.links.find(l => l.id === id); }
+/* Mode « app » : lien classique (nouvel onglet sans lien de parenté) → Chrome peut l'ouvrir dans l'app installée.
+   Mode « onglet » : un onglet nommé par app, réutilisé (pas de rechargement). */
+const tgt = id => cfg.ouvrir === 'onglet' ? `target="tonio_${esc(id)}"` : 'target="_blank" rel="noopener"';
 /* ---------- Ouverture d'une app au bon endroit (#tonio=<identifiant>@<vue>) ---------- */
 const SAVE_VUE = { lifeadmin: 'vue:sauvegarde', 'aide-memoire': 'vue:settings', bourse: 'vue:parametres', idees: 'vue:reglages' };
 const toRef = rid => { if (!rid) return ''; const m = /^ecart:(.+):(\d{4})$/.exec(rid); return m ? `gl:${m[1]}:Budget:${m[2]}@bvr` : rid; };
@@ -714,7 +720,9 @@ function openDeep(app, ref) {
   if (!SOURCES[app]) return;
   const u = deepUrl(app, ref);
   if (!u) { renderNotice(`Pour ouvrir <b>${esc(SOURCES[app].name)}</b> depuis l’Accueil, ajoutez d’abord son adresse dans ⚙️ Liens & réglages.`, 'info'); openSettings(); return; }
-  window.open(u, 'tonio_' + app);   // même onglet pour une même app : pas de rechargement ni de nouveau code
+  if (cfg.ouvrir === 'onglet') { window.open(u, 'tonio_' + app); return; }   // même onglet réutilisé
+  const a = document.createElement('a'); a.href = u; a.target = '_blank'; a.rel = 'noopener';  // vrai clic de lien → app installée
+  document.body.appendChild(a); a.click(); a.remove();
 }
 const appOf = el => { const a = el.closest('[data-app]'); return a ? a.dataset.app : decodeURIComponent(location.hash.slice(1).split('/')[0]); };
 document.addEventListener('dblclick', e => {
@@ -729,7 +737,7 @@ function renderLinks() {
     const d = DATA[l.id];
     const sub = d ? `<span class="dot ${fresh(d.exported_at)}" style="display:inline-block;width:8px;height:8px;margin-right:4px"></span>${ageTxt(d.exported_at)}` : src ? src.desc : (l.url ? new URL(l.url, location.href).hostname : '');
     return l.url
-      ? `<a class="lk" href="${esc(l.url)}" target="tonio_${esc(l.id)}"><span class="ico">${esc(l.icon || '🔗')}</span><span><b>${esc(l.name)}</b><small>${sub}</small></span></a>`
+      ? `<a class="lk" href="${esc(l.url)}" ${tgt(l.id)}><span class="ico">${esc(l.icon || '🔗')}</span><span><b>${esc(l.name)}</b><small>${sub}</small></span></a>`
       : `<a class="lk off" href="#" data-act="settings"><span class="ico">${esc(l.icon || '🔗')}</span><span><b>${esc(l.name)}</b><small>＋ ajouter le lien</small></span></a>`;
   }).join('');
 }
@@ -745,7 +753,7 @@ function renderCards() {
   const all = [];
   $('#cards').innerHTML = ORDER.map(id => {
     const s = SOURCES[id], d = DATA[id], l = linkFor(id);
-    const open = l && l.url ? `<a class="btn sm pri" href="${esc(l.url)}" target="tonio_${id}">Ouvrir ↗</a>` : `<button class="btn sm" data-act="settings">＋ Lien</button>`;
+    const open = l && l.url ? `<a class="btn sm pri" href="${esc(l.url)}" ${tgt(id)}>Ouvrir ↗</a>` : `<button class="btn sm" data-act="settings">＋ Lien</button>`;
     let body;
     if (!d) body = `<div class="empty">${SRC ? 'Aucun export trouvé dans Tonio/' + id + '/.' : 'Reliez le dossier Tonio pour voir le résumé.'}</div>`;
     else {
@@ -876,6 +884,7 @@ function openSettings() {
   drawEd();
   $('#dirInfo').innerHTML = !fsOK ? 'Ce navigateur ne permet pas de relier un dossier (utilisez Chrome ou Edge sur PC).' : dirHandle ? `Dossier relié : <b>${esc(dirHandle.name)}</b> (lecture seule).` : 'Aucun dossier relié.';
   $('#retInfo').innerHTML = !fsOK ? 'Sur cet appareil, ouvrez le journal depuis un fichier (page Journal).' : retourHandle ? `Dossier relié : <b>${esc(retourHandle.name)}</b> (lecture seule) · ${JOURNAL.files.length} journal(aux) trouvé(s).` : 'Aucun dossier relié : la page Journal reste vide.';
+  document.querySelectorAll('[data-ouvrir]').forEach(r => { r.checked = r.value === (cfg.ouvrir || 'app'); });
   $('#dlg').showModal();
 }
 function drawEd() {
@@ -926,7 +935,7 @@ document.addEventListener('click', async e => {
     case 'selEnt': cfg.sel = Object.assign({}, cfg.sel, { [b.dataset.app]: b.dataset.v }); saveCfg(); renderAll(); break;
   }
 });
-document.addEventListener('change', e => { if (e.target.matches('[data-journal]')) { chooseJournal(e.target.value); return; } const t = e.target.closest('[data-sel]'); if (!t) return; cfg.sel = Object.assign({}, cfg.sel, { [t.dataset.sel]: t.value }); saveCfg(); renderAll(); });
+document.addEventListener('change', e => { if (e.target.matches('[data-ouvrir]')) { cfg.ouvrir = e.target.value; saveCfg(); renderAll(); return; } if (e.target.matches('[data-journal]')) { chooseJournal(e.target.value); return; } const t = e.target.closest('[data-sel]'); if (!t) return; cfg.sel = Object.assign({}, cfg.sel, { [t.dataset.sel]: t.value }); saveCfg(); renderAll(); });
 $('#journalIn').addEventListener('change', e => { journalFromFiles([...e.target.files]); e.target.value = ''; });
 $('#fileIn').addEventListener('change', e => { readFiles([...e.target.files]); e.target.value = ''; });
 $('#cfgIn').addEventListener('change', e => { if (e.target.files[0]) importCfg(e.target.files[0]); e.target.value = ''; });

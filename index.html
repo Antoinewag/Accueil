@@ -93,6 +93,9 @@ tr.hl td{background:#fff4c2}tr.hl{outline:2px solid #f3c64b;outline-offset:-2px}
 h3.sub{font-size:15px;margin:12px 0 6px}
 .tip{background:var(--soft);border-radius:10px;padding:8px 10px}
 .dhead select{padding:7px 10px;border-radius:9px;border:1px solid var(--line);font:inherit}
+.op{cursor:pointer}tr.op:hover td,li.op:hover,.item.op:hover{background:#f3f6ff}.kpi.op:hover{box-shadow:inset 0 0 0 1px #b9c8ff}td.op:hover{background:#e8eeff!important}
+.gocell{width:30px;text-align:center}a.go2{text-decoration:none;color:var(--acc);font-weight:700;padding:1px 6px;border-radius:6px}a.go2:hover{background:var(--soft)}
+.hint{margin:-6px 0 14px;font-size:13px;color:var(--mut)}
 .pos{color:var(--ok)}.neg{color:var(--bad)}.wrn{color:var(--warn)}
 .list{margin:0;padding:0;list-style:none;font-size:14px}
 .list li{display:flex;gap:8px;justify-content:space-between;padding:5px 0;border-top:1px dashed var(--line)}
@@ -197,7 +200,7 @@ table.ed input.ic{width:46px;text-align:center}
 
 <script>
 'use strict';
-const VERSION = 'V1.5';
+const VERSION = 'V1.6';
 const LS = 'accueil_tonio_v1';
 
 /* ---------- Apps connues ---------- */
@@ -259,7 +262,7 @@ function ageTxt(iso) {
   const h = a * 24; if (h < 24) return `il y a ${Math.floor(h)} h${min % 60 >= 1 && h < 6 ? ' ' + String(Math.floor(min % 60)).padStart(2, '0') : ''}`;
   return `il y a ${Math.floor(a)} j`;
 }
-const kpi = (label, val, c = '') => `<div class="kpi"><span>${label}</span><b class="${c}">${val}</b></div>`;
+const kpi = (label, val, c = '', o = '') => `<div class="kpi${o ? ' op' : ''}"${o ? ` data-open="${esc(o)}" title="Double-clic : ouvrir dans l’app"` : ''}><span>${label}</span><b class="${c}">${val}</b></div>`;
 const recs = (d, t) => (d.records || []).filter(r => r.type === t);
 
 /* ---------- Résumés par app ---------- */
@@ -275,8 +278,8 @@ const VIEWS = {
     const st = { en_retard: ['bad', 'retard'], urgent: ['bad', 'urgent'], bientot: ['warn', 'bientôt'], a_venir: ['', 'à venir'] };
     const list = [...late, ...soon.filter(r => r.status !== 'en_retard')].slice(0, 5).map(r => {
       const s = st[r.status] || ['', r.status || ''];
-      return `<li><span class="l"><span class="tag ${s[0]}">${s[1]}</span>${esc(r.title)}${r.data && r.data.organisme ? ' · ' + esc(r.data.organisme) : ''}</span><span class="r">${dfr(r.date)} · ${eur(r.amount)}</span></li>`;
-    }).join('') + preav.map(r => `<li><span class="l"><span class="tag warn">préavis</span>${esc(r.title)}</span><span class="r">avant le ${dfr(r.data.limite_preavis)}</span></li>`).join('');
+      return `<li class="op" data-open="${esc(r.id)}"><span class="l"><span class="tag ${s[0]}">${s[1]}</span>${esc(r.title)}${r.data && r.data.organisme ? ' · ' + esc(r.data.organisme) : ''}</span><span class="r">${dfr(r.date)} · ${eur(r.amount)}</span></li>`;
+    }).join('') + preav.map(r => `<li class="op" data-open="${esc(r.id)}"><span class="l"><span class="tag warn">préavis</span>${esc(r.title)}</span><span class="r">avant le ${dfr(r.data.limite_preavis)}</span></li>`).join('');
     return {
       kpis: kpi('À payer (30 j)', eur(m.total_a_payer_30j ?? soon.reduce((s, r) => s + (r.amount || 0), 0))) + kpi('Échéances 30 j', m.echeances_30j ?? soon.length) + kpi('En retard', late.length, late.length ? 'neg' : 'pos') + kpi('Démarches', `${dem.length}${crit ? ` <small class="neg">(${crit} crit.)</small>` : ''}`),
       list: list || '<li class="empty">Aucune échéance dans les 30 jours.</li>',
@@ -297,12 +300,12 @@ const VIEWS = {
     const list = sorted.slice(0, 5).map(r => {
       const p = pr[r.data && r.data.priorite] || ['', ''];
       const lateTag = r.date && r.date < T ? '<span class="tag bad">retard</span>' : '';
-      return `<li><span class="l">${lateTag}${p[1] ? `<span class="tag ${p[0]}">${p[1]}</span>` : ''}${esc(r.title)}</span><span class="r">${r.date ? dfr(r.date) : 'sans date'}${r.data && r.data.responsable ? ' · ' + esc(r.data.responsable.split(' ')[0]) : ''}</span></li>`;
+      return `<li class="op" data-open="${esc(r.id)}"><span class="l">${lateTag}${p[1] ? `<span class="tag ${p[0]}">${p[1]}</span>` : ''}${esc(r.title)}</span><span class="r">${r.date ? dfr(r.date) : 'sans date'}${r.data && r.data.responsable ? ' · ' + esc(r.data.responsable.split(' ')[0]) : ''}</span></li>`;
     }).join('');
     const reu = recs(d, 'reunion').sort((a, b) => (b.date || '').localeCompare(a.date || ''))[0];
     const dec = recs(d, 'decision').sort((a, b) => (b.date || '').localeCompare(a.date || '')).slice(0, 2);
-    const extra = (reu ? `<li><span class="l"><span class="tag ok">réunion</span>${esc(reu.title)}</span><span class="r">${dfr(reu.date)}</span></li>` : '') +
-      dec.map(r => `<li><span class="l"><span class="tag">décision</span>${esc(r.title)}</span><span class="r">${dfr(r.date)}</span></li>`).join('');
+    const extra = (reu ? `<li class="op" data-open="${esc(reu.id)}"><span class="l"><span class="tag ok">réunion</span>${esc(reu.title)}</span><span class="r">${dfr(reu.date)}</span></li>` : '') +
+      dec.map(r => `<li class="op" data-open="${esc(r.id)}"><span class="l"><span class="tag">décision</span>${esc(r.title)}</span><span class="r">${dfr(r.date)}</span></li>`).join('');
     return {
       kpis: kpi('Tâches ouvertes', m.taches_ouvertes ?? open.length) + kpi('En retard', late.length, late.length ? 'neg' : 'pos') + kpi('Échéance 7 j', wk.length, wk.length ? 'wrn' : '') + kpi('Projets actifs', m.projets_actifs ?? recs(d, 'projet').length),
       list: (list || '<li class="empty">Aucune tâche ouverte.</li>') + extra,
@@ -320,8 +323,8 @@ const VIEWS = {
     const trig = recs(d, 'alerte').filter(r => r.status === 'declenchee');
     const moves = recs(d, 'mouvement').filter(r => r.date && r.date >= addDays(T, -3));
     const stale = m.cours_le_plus_ancien && m.cours_le_plus_ancien < addDays(T, -2);
-    const list = movers.map(r => `<li><span class="l"><span class="tag">jour</span>${esc(r.title)}</span><span class="r ${cls(r.data.variation_jour_pct)}">${pct(r.data.variation_jour_pct, 2)}</span></li>`).join('') +
-      trig.map(r => `<li><span class="l"><span class="tag bad">alerte</span>${esc(r.title)}</span><span class="r">${dfr(r.date)}</span></li>`).join('');
+    const list = movers.map(r => `<li class="op" data-open="${esc(r.id)}"><span class="l"><span class="tag">jour</span>${esc(r.title)}</span><span class="r ${cls(r.data.variation_jour_pct)}">${pct(r.data.variation_jour_pct, 2)}</span></li>`).join('') +
+      trig.map(r => `<li class="op" data-open="${esc(r.id)}"><span class="l"><span class="tag bad">alerte</span>${esc(r.title)}</span><span class="r">${dfr(r.date)}</span></li>`).join('');
     return {
       kpis: kpi('Valeur', eur(m.valeur_totale, 0)) + kpi('Plus-value latente', `${eur(m.plus_value_latente, 0)} <small>${pct(m.plus_value_latente_pct)}</small>`, cls(m.plus_value_latente)) + kpi('Aujourd’hui', eur(m.variation_jour, 0), cls(m.variation_jour)) + kpi('Alertes', m.alertes_declenchees ?? trig.length, (m.alertes_declenchees ?? trig.length) ? 'neg' : ''),
       list: list || '<li class="empty">Aucun mouvement notable.</li>',
@@ -349,8 +352,8 @@ const VIEWS = {
     const list = rows.map(({ c, full, cur, bud }) => {
       const fd = full && full.data;
       const ecart = fd && bud ? (fd.ebitda - bud.data.ebitda) / Math.abs(bud.data.ebitda || 1) : null;
-      let li = `<li><span class="l"><b>${esc(c)}</b> · ${fd ? fd.exercice : '—'} : CA ${keur(fd && fd.chiffre_affaires_70)} · EBITDA ${keur(fd && fd.ebitda)}</span><span class="r ${cls(ecart)}">${ecart != null ? 'vs budget ' + pct(ecart, 0) : ''}</span></li>`;
-      if (cur && full && cur !== full) li += `<li><span class="l">&nbsp;&nbsp;↳ ${cur.data.exercice} en cours (${cur.data.mois_au - (cur.data.mois_du || 1) + 1} mois) : CA ${keur(cur.data.chiffre_affaires_70)} · EBITDA ${keur(cur.data.ebitda)}</span><span class="r">${pct(cur.data.marge_ebitda)}</span></li>`;
+      let li = `<li class="op" data-open="${esc(full ? full.id + '@overview' : '')}"><span class="l"><b>${esc(c)}</b> · ${fd ? fd.exercice : '—'} : CA ${keur(fd && fd.chiffre_affaires_70)} · EBITDA ${keur(fd && fd.ebitda)}</span><span class="r ${cls(ecart)}">${ecart != null ? 'vs budget ' + pct(ecart, 0) : ''}</span></li>`;
+      if (cur && full && cur !== full) li += `<li class="op" data-open="${esc(cur.id + '@overview')}"><span class="l">&nbsp;&nbsp;↳ ${cur.data.exercice} en cours (${cur.data.mois_au - (cur.data.mois_du || 1) + 1} mois) : CA ${keur(cur.data.chiffre_affaires_70)} · EBITDA ${keur(cur.data.ebitda)}</span><span class="r">${pct(cur.data.marge_ebitda)}</span></li>`;
       return li;
     }).join('');
     const ecartMain = f && b ? (f.ebitda - b.ebitda) / Math.abs(b.ebitda || 1) : null;
@@ -370,7 +373,7 @@ const VIEWS = {
       const l = a[0].data, p = a[1] && a[1].data;
       const g = p && p.chiffre_affaires ? l.chiffre_affaires / p.chiffre_affaires - 1 : null;
       const v = l.valorisation;
-      return `<li><span class="l"><b>${esc(a[0].title)}</b> · ${l.exercice} : CA ${keur(l.chiffre_affaires)}${g != null ? ` <small class="${cls(g)}">${pct(g, 0)}</small>` : ''} · EBITDA ${keur(l.ebitda)}</span><span class="r">${v && v.valeur ? 'valo ' + keur(v.valeur) : ''}</span></li>`;
+      return `<li class="op" data-open="${esc(a[0].id + '@valo')}"><span class="l"><b>${esc(a[0].title)}</b> · ${l.exercice} : CA ${keur(l.chiffre_affaires)}${g != null ? ` <small class="${cls(g)}">${pct(g, 0)}</small>` : ''} · EBITDA ${keur(l.ebitda)}</span><span class="r">${v && v.valeur ? 'valo ' + keur(v.valeur) : ''}</span></li>`;
     }).join('');
     const one = socs.length === 1 ? socs[0][0].data : null;
     const v = one && one.valorisation;
@@ -393,7 +396,7 @@ const VIEWS = {
     const vt = { creuser: 'ok', attente: 'warn', abandonner: 'bad' };
     const list = show.map(r => {
       const a = r.data.derniere_analyse;
-      return `<li><span class="l"><span class="tag ${a && a.verdict ? vt[a.verdict] || '' : ''}">${a && a.verdict ? esc(a.verdict) : lab[r.status] || esc(r.status)}</span>${esc(r.title)}</span><span class="r">${score(r) != null ? score(r) + '/100' : r.data.a_analyser ? 'à analyser' : ''}</span></li>`;
+      return `<li class="op" data-open="${esc(r.id)}"><span class="l"><span class="tag ${a && a.verdict ? vt[a.verdict] || '' : ''}">${a && a.verdict ? esc(a.verdict) : lab[r.status] || esc(r.status)}</span>${esc(r.title)}</span><span class="r">${score(r) != null ? score(r) + '/100' : r.data.a_analyser ? 'à analyser' : ''}</span></li>`;
     }).join('');
     const statTxt = Object.entries(ps).filter(([, n]) => n).map(([k, n]) => `${n} ${lab[k] || k}`).join(' · ');
     return {
@@ -410,11 +413,14 @@ const sec = (title, body, extra = '') => `<section class="panel"><h2>${title}${e
 // cellule : texte simple ou {h: html, n: true (aligné à droite), c: classe}
 function tbl(head, rows, empty = 'Rien à afficher.') {
   if (!rows.length) return `<div class="empty">${empty}</div>`;
-  const cell = (x, th) => { const o = (x && typeof x === 'object') ? x : { h: esc(x ?? '—') }; return `<${th ? 'th' : 'td'} class="${o.n ? 'num' : ''} ${o.c || ''}">${o.h ?? '—'}</${th ? 'th' : 'td'}>`; };
-  return `<div class="tbw"><table class="tb"><thead><tr>${head.map(h => cell(h, true)).join('')}</tr></thead><tbody>${rows.map(r => `<tr${r.rid ? ` data-rid="${esc(r.rid)}"` : ''}>${r.map(x => cell(x)).join('')}</tr>`).join('')}</tbody></table></div>`;
+  const cell = (x, th) => { const o = (x && typeof x === 'object') ? x : { h: esc(x ?? '—') }; return `<${th ? 'th' : 'td'} class="${o.n ? 'num' : ''} ${o.c || ''}${o.o ? ' op' : ''}"${o.o ? ` data-open="${esc(o.o)}"` : ''}>${o.h ?? '—'}</${th ? 'th' : 'td'}>`; };
+  const ouv = r => r.open || (r.rid && !String(r.rid).startsWith('ecart:') ? r.rid : '');
+  const any = rows.some(ouv);
+  return `<div class="tbw"><table class="tb"><thead><tr>${head.map(h => cell(h, true)).join('')}${any ? '<th></th>' : ''}</tr></thead><tbody>${rows.map(r => { const o = ouv(r); return `<tr${r.rid ? ` data-rid="${esc(r.rid)}"` : ''}${o ? ` data-open="${esc(o)}" class="op" title="Double-clic : ouvrir dans l’app"` : ''}>${r.map(x => cell(x)).join('')}${any ? `<td class="gocell">${o ? `<a href="#" class="go2" data-go="${esc(o)}" title="Ouvrir dans l’app">↗</a>` : ''}</td>` : ''}</tr>`; }).join('')}</tbody></table></div>`;
 }
 const N = (h, c = '') => ({ h, n: true, c });
-const R = (arr, rid) => { arr.rid = rid; return arr; };
+const R = (arr, rid, open) => { arr.rid = rid; if (open) arr.open = open; return arr; };
+const O = (h, o, c = '') => ({ h, n: true, c, o });
 const H = (h, c = '') => ({ h, c });
 function bars(obj, title) {
   const arr = Object.entries(obj || {}).sort((a, b) => b[1] - a[1]);
@@ -456,14 +462,14 @@ const DETAIL = {
     dem.forEach(r => { const c = r.category || 'Autre'; (byCat[c] = byCat[c] || { critique: [], important: [], conseille: [], autre: [] })[['critique', 'important', 'conseille'].includes(r.data && r.data.priorite) ? r.data.priorite : 'autre'].push(r); });
     const catRows = Object.entries(byCat).sort((a, b) => b[1].critique.length - a[1].critique.length || a[0].localeCompare(b[0]));
     return `
-    <div class="kpis big">${kpi('À payer (30 j)', eur(m.total_a_payer_30j))}${kpi('Échéances 30 j', m.echeances_30j ?? '—')}${kpi('En retard', m.echeances_en_retard ?? 0, m.echeances_en_retard ? 'neg' : 'pos')}${kpi('Charges mensuelles', eur(mensuel, 0))}${kpi('Contrats', contrats.length)}${kpi('Démarches à faire', dem.length)}</div>
+    <div class="kpis big">${kpi('À payer (30 j)', eur(m.total_a_payer_30j), '', 'vue:echeances')}${kpi('Échéances 30 j', m.echeances_30j ?? '—', '', 'vue:echeances')}${kpi('En retard', m.echeances_en_retard ?? 0, m.echeances_en_retard ? 'neg' : 'pos', 'vue:echeances')}${kpi('Charges mensuelles', eur(mensuel, 0), '', 'vue:budget')}${kpi('Contrats', contrats.length, '', 'vue:echeances')}${kpi('Démarches à faire', dem.length, '', 'vue:checklist')}</div>
     ${sec('📅 Échéances à venir', tbl(['Date', 'Statut', 'Intitulé', 'Organisme', N('Montant'), 'Récurrence', 'Catégorie'],
       open.map(r => R([dfr(r.date), H(chipS(r.status)), r.title, (r.data || {}).organisme, N(eur(r.amount)), RECUR[(r.data || {}).recurrence] || (r.data || {}).recurrence || '', r.category], r.id))), `${open.length} non réglée(s)`)}
     ${sec('📝 Contrats', tbl(['Contrat', 'Organisme', N('Montant'), 'Récurrence', 'Fin du contrat', 'Préavis', 'Résilier avant le'],
       contrats.map(r => { const x = r.data || {}; const soon = x.limite_preavis && x.limite_preavis <= addDays(T, 60); return R([r.title, x.organisme, N(eur(r.amount)), RECUR[x.recurrence] || x.recurrence || '', dfr(x.fin_contrat), x.preavis_jours ? x.preavis_jours + ' j' : '—', H(x.limite_preavis ? `<span class="${soon ? 'neg' : ''}">${dfr(x.limite_preavis)}</span>` : '—')], r.id); }), 'Aucun contrat.'))}
     ${sec('✅ Démarches à faire, par thème', tbl(['Thème', N('Critiques'), N('Importantes'), N('Conseillées'), 'Exemples critiques'],
-      catRows.map(([c, g]) => [c, N(g.critique.length, g.critique.length ? 'neg' : ''), N(g.important.length), N(g.conseille.length + g.autre.length), H(g.critique.slice(0, 3).map(r => esc(r.title)).join(' · ') || '<span class="muted">—</span>')])), `${dem.length} au total`)}
-    ${docs.length ? sec('📄 Documents lisibles par Tonio', `<ul class="list">${docs.map(r => `<li><span class="l">${esc(r.title)}</span><span class="r">${dfr(r.date)}</span></li>`).join('')}</ul>`) : ''}`;
+      catRows.map(([c, g]) => R([c, N(g.critique.length, g.critique.length ? 'neg' : ''), N(g.important.length), N(g.conseille.length + g.autre.length), H(g.critique.slice(0, 3).map(r => esc(r.title)).join(' · ') || '<span class="muted">—</span>')], '', g.critique[0] ? g.critique[0].id : 'vue:checklist'))), `${dem.length} au total`)}
+    ${docs.length ? sec('📄 Documents lisibles par Tonio', `<ul class="list">${docs.map(r => `<li class="op" data-open="${esc(r.id)}"><span class="l">${esc(r.title)}</span><span class="r">${dfr(r.date)}</span></li>`).join('')}</ul>`) : ''}`;
   },
 
   'aide-memoire'(d, T) {
@@ -480,15 +486,15 @@ const DETAIL = {
     const st = { a_faire: 'à faire', en_cours: 'en cours', fait: 'fait' };
     const nl = s => esc(s || '').replace(/\n/g, '<br>');
     return `
-    <div class="kpis big">${kpi('Tâches ouvertes', open.length)}${kpi('En retard', open.filter(r => r.date && r.date < T).length, 'neg')}${kpi('Échéance 7 j', open.filter(r => r.date && r.date >= T && r.date <= addDays(T, 7)).length, 'wrn')}${kpi('Projets actifs', projets.length)}${kpi('Réunions', reus.length)}${kpi('Éléments privés (non visibles)', (d.excluded || {}).private_items ?? 0)}</div>
+    <div class="kpis big">${kpi('Tâches ouvertes', open.length, '', 'vue:tasks')}${kpi('En retard', open.filter(r => r.date && r.date < T).length, 'neg', 'vue:tasks?due=late')}${kpi('Échéance 7 j', open.filter(r => r.date && r.date >= T && r.date <= addDays(T, 7)).length, 'wrn', 'vue:tasks?due=week')}${kpi('Projets actifs', projets.length, '', 'vue:projects')}${kpi('Réunions', reus.length, '', 'vue:meetings')}${kpi('Éléments privés (non visibles)', (d.excluded || {}).private_items ?? 0)}</div>
     ${sec('✅ Tâches ouvertes', tbl(['Échéance', 'Priorité', 'Tâche', 'Responsable', 'Projet', 'Statut'],
       open.map(r => { const x = r.data || {}; const p = pr[x.priorite] || ['', x.priorite || '']; const late = r.date && r.date < T; return R([H(r.date ? `<span class="${late ? 'neg' : ''}">${dfr(r.date)}${late ? ' ⚠' : ''}</span>` : '<span class="muted">sans date</span>'), H(p[1] ? `<span class="tag ${p[0]}">${p[1]}</span>` : ''), r.title, x.responsable, x.projet, st[r.status] || r.status], r.id); })), `${open.length} ouverte(s), ${done.length} faite(s)`)}
     ${sec('📁 Projets', tbl(['Projet', 'Description', N('Tâches ouvertes'), 'Personnes'],
-      projets.map(r => [H(`<b>${esc(r.title)}</b>`), (r.data || {}).description, N(open.filter(a => (a.data || {}).projet === r.title).length), ((r.data || {}).personnes || []).join(', ')]), 'Aucun projet.'))}
-    ${sec('🗓️ Réunions', reus.length ? reus.map(r => { const x = r.data || {}; return `<div class="item"><div><b>${esc(r.title)}</b> <span class="muted">· ${dfr(r.date)}${x.heure ? ' ' + esc(x.heure) : ''}${(x.projets || []).length ? ' · ' + esc(x.projets.join(', ')) : ''}</span></div>${x.resume ? `<div>${nl(x.resume)}</div>` : ''}${(x.participants || []).length ? `<div class="muted">👥 ${esc(x.participants.join(', '))}</div>` : ''}${decs.filter(dd => (dd.data || {}).reunion === r.title).map(dd => `<div>➜ <i>${esc(dd.title)}</i></div>`).join('')}</div>`; }).join('') : '<div class="empty">Aucune réunion.</div>')}
-    ${sec('⚖️ Décisions', tbl(['Date', 'Décision', 'Réunion', 'Projet'], decs.map(r => [dfr(r.date), r.title, (r.data || {}).reunion, ((r.data || {}).projets || []).join(', ')]), 'Aucune décision.'))}
-    ${sec('🗒️ Notes', notes.length ? notes.map(r => `<div class="item"><div><b>${esc(r.title)}</b> <span class="muted">· ${dfr(r.date)}</span> ${(r.tags || []).map(t => `<span class="tag">${esc(t)}</span>`).join('')}</div><div>${nl((r.data || {}).contenu)}</div></div>`).join('') : '<div class="empty">Aucune note.</div>')}
-    ${docs.length ? sec('📄 Documents', tbl(['Date', 'Document', 'Type', 'Résumé'], docs.map(r => [dfr(r.date), r.title, (r.data || {}).type, (r.data || {}).resume]))) : ''}`;
+      projets.map(r => R([H(`<b>${esc(r.title)}</b>`), (r.data || {}).description, N(open.filter(a => (a.data || {}).projet === r.title).length), ((r.data || {}).personnes || []).join(', ')], r.id)), 'Aucun projet.'))}
+    ${sec('🗓️ Réunions', reus.length ? reus.map(r => { const x = r.data || {}; return `<div class="item op" data-open="${esc(r.id)}" title="Double-clic : ouvrir dans l’app"><div><b>${esc(r.title)}</b> <span class="muted">· ${dfr(r.date)}${x.heure ? ' ' + esc(x.heure) : ''}${(x.projets || []).length ? ' · ' + esc(x.projets.join(', ')) : ''}</span></div>${x.resume ? `<div>${nl(x.resume)}</div>` : ''}${(x.participants || []).length ? `<div class="muted">👥 ${esc(x.participants.join(', '))}</div>` : ''}${decs.filter(dd => (dd.data || {}).reunion === r.title).map(dd => `<div>➜ <i>${esc(dd.title)}</i></div>`).join('')}</div>`; }).join('') : '<div class="empty">Aucune réunion.</div>')}
+    ${sec('⚖️ Décisions', tbl(['Date', 'Décision', 'Réunion', 'Projet'], decs.map(r => R([dfr(r.date), r.title, (r.data || {}).reunion, ((r.data || {}).projets || []).join(', ')], r.id)), 'Aucune décision.'))}
+    ${sec('🗒️ Notes', notes.length ? notes.map(r => `<div class="item op" data-open="${esc(r.id)}" title="Double-clic : ouvrir dans l’app"><div><b>${esc(r.title)}</b> <span class="muted">· ${dfr(r.date)}</span> ${(r.tags || []).map(t => `<span class="tag">${esc(t)}</span>`).join('')}</div><div>${nl((r.data || {}).contenu)}</div></div>`).join('') : '<div class="empty">Aucune note.</div>')}
+    ${docs.length ? sec('📄 Documents', tbl(['Date', 'Document', 'Type', 'Résumé'], docs.map(r => R([dfr(r.date), r.title, (r.data || {}).type, (r.data || {}).resume], r.id)))) : ''}`;
   },
 
   bourse(d, T) {
@@ -500,16 +506,16 @@ const DETAIL = {
     const p2 = v => v == null ? '—' : pct(v);
     const stale = m.cours_le_plus_ancien && m.cours_le_plus_ancien < addDays(T, -2);
     return `
-    <div class="kpis big">${kpi('Valeur totale', eur(m.valeur_totale, 0))}${kpi('Investi', eur(m.investi, 0))}${kpi('Plus-value latente', `${eur(m.plus_value_latente, 0)} <small>${pct(m.plus_value_latente_pct)}</small>`, cls(m.plus_value_latente))}${kpi('Aujourd’hui', eur(m.variation_jour, 0), cls(m.variation_jour))}${kpi(`Plus-value réalisée ${T.slice(0, 4)}`, eur(m.plus_value_realisee_annee, 0), cls(m.plus_value_realisee_annee))}${kpi('Dividendes', eur(m.dividendes, 0))}${kpi('Liquidités', eur(m.liquidites, 0))}${kpi('Exonération restante', eur(m.exoneration_plus_values_restante, 0))}</div>
+    <div class="kpis big">${kpi('Valeur totale', eur(m.valeur_totale, 0), '', 'vue:overview')}${kpi('Investi', eur(m.investi, 0), '', 'vue:positions')}${kpi('Plus-value latente', `${eur(m.plus_value_latente, 0)} <small>${pct(m.plus_value_latente_pct)}</small>`, cls(m.plus_value_latente))}${kpi('Aujourd’hui', eur(m.variation_jour, 0), cls(m.variation_jour))}${kpi(`Plus-value réalisée ${T.slice(0, 4)}`, eur(m.plus_value_realisee_annee, 0), cls(m.plus_value_realisee_annee))}${kpi('Dividendes', eur(m.dividendes, 0))}${kpi('Liquidités', eur(m.liquidites, 0))}${kpi('Exonération restante', eur(m.exoneration_plus_values_restante, 0))}</div>
     ${stale ? `<div class="notice">⚠️ Certains cours datent du ${dfr(m.cours_le_plus_ancien)} : ouvrez Mon Portefeuille pour les actualiser.</div>` : ''}
-    ${sec('🧩 Répartition', `<div class="barsg">${bars(rp.classe, 'Classe d’actif')}${bars(rp.region, 'Région')}${bars(rp.secteur, 'Secteur')}${bars(rp.devise, 'Devise')}</div>`)}
+    ${sec('🧩 Répartition', `<div class="barsg op" data-open="vue:repartition" title="Double-clic : ouvrir dans l’app">${bars(rp.classe, 'Classe d’actif')}${bars(rp.region, 'Région')}${bars(rp.secteur, 'Secteur')}${bars(rp.devise, 'Devise')}</div>`)}
     ${sec('📋 Positions', tbl(['Titre', 'Classe', 'Région', N('Poids'), N('Plus-value'), N('Jour'), N('1 mois'), N('3 mois'), N('RSI'), 'Lecture'],
-      pos.map(r => { const x = r.data; return [H(`<b>${esc(r.title)}</b>${x.symbole ? ` <span class="muted">${esc(x.symbole)}</span>` : ''}`), x.classe_actif, x.region, N(pct(x.poids).replace('+', '')), N(p2(x.plus_value_latente_pct), cls(x.plus_value_latente_pct)), N(p2(x.variation_jour_pct), cls(x.variation_jour_pct)), N(p2(x.perf_1m), cls(x.perf_1m)), N(p2(x.perf_3m), cls(x.perf_3m)), N(x.rsi != null ? nf0.format(x.rsi) : '—', x.rsi >= 70 ? 'wrn' : x.rsi <= 30 ? 'wrn' : ''), x.lecture]; })), `${pos.length} ligne(s)`)}
+      pos.map(r => { const x = r.data; return R([H(`<b>${esc(r.title)}</b>${x.symbole ? ` <span class="muted">${esc(x.symbole)}</span>` : ''}`), x.classe_actif, x.region, N(pct(x.poids).replace('+', '')), N(p2(x.plus_value_latente_pct), cls(x.plus_value_latente_pct)), N(p2(x.variation_jour_pct), cls(x.variation_jour_pct)), N(p2(x.perf_1m), cls(x.perf_1m)), N(p2(x.perf_3m), cls(x.perf_3m)), N(x.rsi != null ? nf0.format(x.rsi) : '—', x.rsi >= 70 ? 'wrn' : x.rsi <= 30 ? 'wrn' : ''), x.lecture], r.id); })), `${pos.length} ligne(s)`)}
     ${sec('🔔 Alertes', tbl(['État', 'Alerte', N('Seuil'), N('Valeur actuelle'), 'Déclenchée le'],
       al.sort((a, b) => (a.status === 'declenchee' ? 0 : 1) - (b.status === 'declenchee' ? 0 : 1)).map(r => R([H(`<span class="tag ${r.status === 'declenchee' ? 'bad' : r.status === 'active' ? 'ok' : ''}">${r.status === 'declenchee' ? 'déclenchée' : r.status}</span>`), r.title, N(r.data.seuil ?? '—'), N(r.data.valeur_actuelle != null ? nf2.format(r.data.valeur_actuelle) : '—'), dfr(r.date)], r.id)), 'Aucune alerte.'))}
     ${sec('⚡ Mouvements inhabituels (30 jours)', tbl(['Date', 'Titre', N('Variation'), N('Variation habituelle'), 'En portefeuille'],
       mv.map(r => R([dfr(r.date), r.title.replace(/\s[-+]?\d.*$/, ''), N(pct(r.data.variation_pct, 2), cls(r.data.variation_pct)), N('± ' + pct(r.data.variation_habituelle_pct, 2).replace('+', '')), r.data.en_portefeuille ? 'oui' : 'surveillé'], r.id)), 'Aucun mouvement inhabituel.'))}
-    ${sec('👀 Titres surveillés', tbl(['Titre', 'Symbole', N('Cours'), 'Lecture'], watch.map(r => [r.title, r.data.symbole, N(r.data.cours != null ? nf2.format(r.data.cours) : '—'), r.data.lecture]), 'Aucun titre surveillé.'))}
+    ${sec('👀 Titres surveillés', tbl(['Titre', 'Symbole', N('Cours'), 'Lecture'], watch.map(r => R([r.title, r.data.symbole, N(r.data.cours != null ? nf2.format(r.data.cours) : '—'), r.data.lecture], r.id)), 'Aucun titre surveillé.'))}
     <p class="muted">Informations de suivi uniquement : ce n’est pas un conseil en investissement.</p>`;
   },
 
@@ -523,17 +529,18 @@ const DETAIL = {
     return pk + clients.filter(c => c === cur).map(c => {
       const mine = rs.filter(r => (r.data.client || r.title) === c).sort((a, b) => a.data.exercice - b.data.exercice || a.status.localeCompare(b.status));
       const lab = r => `${r.data.exercice}${r.status !== 'Actuals' ? ' ' + r.status : ''}${(r.data.mois_au - (r.data.mois_du || 1) + 1) < 12 ? ` (${r.data.mois_au - (r.data.mois_du || 1) + 1} m)` : ''}`;
-      const rows = LINES.map(([k, l]) => [H(BOLD.includes(k) ? `<b>${l}</b>` : l), ...mine.map(r => N(keur(r.data[k]), r.status !== 'Actuals' ? 'bud' : ''))]);
-      rows.push([H('<b>Marge EBITDA</b>'), ...mine.map(r => N(pct(r.data.marge_ebitda), r.status !== 'Actuals' ? 'bud' : ''))]);
+      const gref = r => `${r.id}@${r.status !== 'Actuals' ? 'bvr' : 'fs'}`, lastRef = (mine.filter(r => r.status === 'Actuals').pop() || mine[mine.length - 1]);
+      const rows = LINES.map(([k, l]) => R([H(BOLD.includes(k) ? `<b>${l}</b>` : l), ...mine.map(r => O(keur(r.data[k]), gref(r), r.status !== 'Actuals' ? 'bud' : ''))], '', lastRef ? gref(lastRef) : ''));
+      rows.push(R([H('<b>Marge EBITDA</b>'), ...mine.map(r => O(pct(r.data.marge_ebitda), gref(r), r.status !== 'Actuals' ? 'bud' : ''))], '', lastRef ? gref(lastRef) : ''));
       const act = mine.filter(r => r.status === 'Actuals');
-      const ecarts = act.map(a => { const b = mine.find(r => r.status === 'Budget' && r.data.exercice === a.data.exercice); if (!b || (a.data.mois_au - (a.data.mois_du || 1)) < 11) return null; const e = k => (a.data[k] - b.data[k]); const ep = k => b.data[k] ? e(k) / Math.abs(b.data[k]) : null; return R([String(a.data.exercice), N(keur(e('chiffre_affaires_70')), cls(e('chiffre_affaires_70'))), N(pct(ep('chiffre_affaires_70'), 0), cls(ep('chiffre_affaires_70'))), N(keur(e('ebitda')), cls(e('ebitda'))), N(pct(ep('ebitda'), 0), cls(ep('ebitda'))), N(keur(e('remunerations_62')), cls(-e('remunerations_62'))), N(keur(e('services_61')), cls(-e('services_61')))], `ecart:${c}:${a.data.exercice}`); }).filter(Boolean);
+      const ecarts = act.map(a => { const b = mine.find(r => r.status === 'Budget' && r.data.exercice === a.data.exercice); if (!b || (a.data.mois_au - (a.data.mois_du || 1)) < 11) return null; const e = k => (a.data[k] - b.data[k]); const ep = k => b.data[k] ? e(k) / Math.abs(b.data[k]) : null; return R([String(a.data.exercice), N(keur(e('chiffre_affaires_70')), cls(e('chiffre_affaires_70'))), N(pct(ep('chiffre_affaires_70'), 0), cls(ep('chiffre_affaires_70'))), N(keur(e('ebitda')), cls(e('ebitda'))), N(pct(ep('ebitda'), 0), cls(ep('ebitda'))), N(keur(e('remunerations_62')), cls(-e('remunerations_62'))), N(keur(e('services_61')), cls(-e('services_61')))], `ecart:${c}:${a.data.exercice}`, `${b.id}@bvr`); }).filter(Boolean);
       const lastA = act[act.length - 1], lastFull = [...act].reverse().find(r => (r.data.mois_au - (r.data.mois_du || 1)) >= 11);
       const budCur = lastA && mine.find(r => r.status === 'Budget' && r.data.exercice === lastA.data.exercice);
       const series = [lastFull && { name: 'Réel ' + lastFull.data.exercice, cls: 's1', data: lastFull.data.ca_par_mois || {} }, lastA && lastA !== lastFull && { name: 'Réel ' + lastA.data.exercice, cls: 's2', data: lastA.data.ca_par_mois || {} }, budCur && budCur.data.ca_par_mois && { name: 'Budget ' + budCur.data.exercice, cls: 's3', data: budCur.data.ca_par_mois }].filter(Boolean);
       return `<h2 class="cli">Client ${esc(c)}</h2>
       ${sec('📑 Compte de résultat par exercice', tbl(['', ...mine.map(r => N(esc(lab(r)), r.status !== 'Actuals' ? 'bud' : ''))], rows), 'en italique : budget')}
       ${ecarts.length ? sec('🎯 Réel vs budget (exercices complets)', tbl(['Exercice', N('Écart CA'), N('%'), N('Écart EBITDA'), N('%'), N('Écart rémunérations'), N('Écart services')], ecarts), 'positif = mieux que le budget pour le CA et l’EBITDA') : ''}
-      ${series.length ? sec('📆 Chiffre d’affaires mois par mois', monthChart(series)) : ''}`;
+      ${series.length ? sec('📆 Chiffre d’affaires mois par mois', `<div class="op" data-open="${esc((lastA || {}).id || '')}@plm" title="Double-clic : ouvrir dans l’app">${monthChart(series)}</div>`) : ''}`;
     }).join('') || '<div class="empty">Aucun client exporté.</div>';
   },
 
@@ -549,11 +556,12 @@ const DETAIL = {
     const pk = picker('bnb', keys.map(k => { const a = by[k], l = [...a].sort((x, y) => y.data.exercice - x.data.exercice)[0].data; return { v: k, t: `${a[0].title} (${l.exercice})`, h: `<b>${esc(a[0].title)}</b> <small>${l.exercice} · CA ${keur(l.chiffre_affaires)}</small>` }; }), cur, `${keys.length} dossiers :`);
     return pk + keys.filter(k => k === cur).map(k => by[k]).map(a => {
       a.sort((x, y) => x.data.exercice - y.data.exercice);
-      const last = a[a.length - 1].data, v = last.valorisation;
+      const last = a[a.length - 1].data, v = last.valorisation, lastId = a[a.length - 1].id;
+      const ong = k => k.startsWith('r:') ? 'ratios' : ['fonds_propres', 'total_bilan'].includes(k) ? 'bilan' : k === 'effectif_moyen_etp' ? 'people' : 'resultats';
       return `<h2 class="cli">${esc(a[0].title)} <span class="muted" style="font-weight:400">BCE ${esc(last.bce || '')}</span></h2>
-      <div class="kpis big">${kpi(`CA ${last.exercice}`, keur(last.chiffre_affaires))}${kpi('EBITDA', keur(last.ebitda))}${kpi('Résultat net', keur(last.resultat_net), cls(last.resultat_net))}${kpi('Fonds propres', keur(last.fonds_propres))}${v ? kpi('Valorisation', keur(v.valeur)) + kpi('Fourchette', `${keur(v.bas)} – ${keur(v.haut)}`) : ''}</div>
-      ${sec('📑 Comptes et ratios sur plusieurs exercices', tbl(['', ...a.map(r => N(String(r.data.exercice)))], LINES.map(([k, l, t]) => [l, ...a.map(r => N(fmt(val(r.data, k), t)))])), `schéma ${esc(last.schema || '')}`)}
-      ${v && (v.methodes || []).length ? sec(`💶 Valorisation ${last.exercice}`, tbl(['Méthode', N('Résultat')], [...v.methodes.map(x => [x.methode, N(x.calculable ? keur(x.resultat) : '<span class="muted">non calculable</span>')]), [H('<b>Valeur retenue</b>'), N(`<b>${keur(v.valeur)}</b>`)], ...(v.apres_decote ? [['Après décote', N(keur(v.apres_decote))]] : [])])) : ''}`;
+      <div class="kpis big">${kpi(`CA ${last.exercice}`, keur(last.chiffre_affaires), '', lastId + '@resultats')}${kpi('EBITDA', keur(last.ebitda), '', lastId + '@resultats')}${kpi('Résultat net', keur(last.resultat_net), cls(last.resultat_net), lastId + '@resultats')}${kpi('Fonds propres', keur(last.fonds_propres), '', lastId + '@bilan')}${v ? kpi('Valorisation', keur(v.valeur), '', lastId + '@valo') + kpi('Fourchette', `${keur(v.bas)} – ${keur(v.haut)}`) : ''}</div>
+      ${sec('📑 Comptes et ratios sur plusieurs exercices', tbl(['', ...a.map(r => N(String(r.data.exercice)))], LINES.map(([k, l, t]) => R([l, ...a.map(r => O(fmt(val(r.data, k), t), r.id + '@' + ong(k)))], '', lastId + '@' + ong(k)))), `schéma ${esc(last.schema || '')}`)}
+      ${v && (v.methodes || []).length ? sec(`💶 Valorisation ${last.exercice}`, tbl(['Méthode', N('Résultat')], [...v.methodes.map(x => R([x.methode, N(x.calculable ? keur(x.resultat) : '<span class="muted">non calculable</span>')], '', lastId + '@valo')), [H('<b>Valeur retenue</b>'), N(`<b>${keur(v.valeur)}</b>`)], ...(v.apres_decote ? [['Après décote', N(keur(v.apres_decote))]] : [])])) : ''}`;
     }).join('') || '<div class="empty">Aucune société enregistrée.</div>';
   },
 
@@ -563,10 +571,10 @@ const DETAIL = {
     const vt = { creuser: 'ok', attente: 'warn', abandonner: 'bad' };
     const ps = (d.metrics || {}).par_statut || {};
     return `
-    <div class="kpis big">${kpi('Idées', rs.length)}${kpi('À analyser', rs.filter(r => r.data.a_analyser).length, 'wrn')}${Object.entries(lab).filter(([k]) => ps[k]).map(([k, [, l]]) => kpi(l[0].toUpperCase() + l.slice(1), ps[k])).join('')}</div>
+    <div class="kpis big">${kpi('Idées', rs.length, '', 'vue:idees')}${kpi('À analyser', rs.filter(r => r.data.a_analyser).length, 'wrn', 'vue:tableau')}${Object.entries(lab).filter(([k]) => ps[k]).map(([k, [, l]]) => kpi(l[0].toUpperCase() + l.slice(1), ps[k])).join('')}</div>
     ${sec('💡 Toutes les idées', tbl(['Statut', 'Idée', 'Secteur', 'Cible', N('Mon score'), N('Score Tonio'), 'Verdict', 'Analysée le'],
       rs.map(r => { const x = r.data, a = x.derniere_analyse || {}; const l = lab[r.status] || ['', r.status]; return R([H(`<span class="tag ${l[0]}">${l[1]}</span>`), H(`<b>${esc(r.title)}</b>`), x.secteur, x.cible, N(x.score_antoine != null ? x.score_antoine + '/100' : '—'), N(a.score_tonio != null ? a.score_tonio + '/100' : '—'), H(a.verdict ? `<span class="tag ${vt[a.verdict] || ''}">${esc(a.verdict)}</span>` : (x.a_analyser ? '<span class="muted">cette nuit</span>' : '—')), a.date ? dfr(a.date) : '—'], r.id); })))}
-    ${sec('📝 Fiches', rs.map(r => { const x = r.data; return `<div class="item"><div><b>${esc(r.title)}</b> <span class="muted">· ajoutée le ${dfr(r.date)}</span></div>${x.description ? `<div>${esc(x.description)}</div>` : '<div class="muted">Pas encore de description.</div>'}${x.pourquoi ? `<div class="muted">Pourquoi moi : ${esc(x.pourquoi)}</div>` : ''}${(x.etapes || []).length ? `<div class="muted">Étapes : ${x.etapes.map(e => esc(typeof e === 'string' ? e : e.titre || e.texte || '')).join(' · ')}</div>` : ''}</div>`; }).join('') || '<div class="empty">Aucune idée.</div>')}`;
+    ${sec('📝 Fiches', rs.map(r => { const x = r.data; return `<div class="item op" data-open="${esc(r.id)}" title="Double-clic : ouvrir dans l’app"><div><b>${esc(r.title)}</b> <span class="muted">· ajoutée le ${dfr(r.date)}</span></div>${x.description ? `<div>${esc(x.description)}</div>` : '<div class="muted">Pas encore de description.</div>'}${x.pourquoi ? `<div class="muted">Pourquoi moi : ${esc(x.pourquoi)}</div>` : ''}${(x.etapes || []).length ? `<div class="muted">Étapes : ${x.etapes.map(e => esc(typeof e === 'string' ? e : e.titre || e.texte || '')).join(' · ')}</div>` : ''}</div>`; }).join('') || '<div class="empty">Aucune idée.</div>')}`;
   }
 };
 
@@ -575,8 +583,9 @@ function renderDetail(id) {
   let body;
   if (!d) body = `<div class="panel empty">${SRC ? 'Aucun export trouvé pour cette app dans le dossier Tonio.' : 'Reliez le dossier Tonio pour afficher cette page.'}</div>`;
   else { try { body = DETAIL[id](d, T); } catch (e) { console.error(e); body = `<div class="panel empty">Export illisible : ${esc(e.message)}</div>`; } }
-  const head = `<div class="dhead"><div class="ico">${s.icon}</div><div style="flex:1;min-width:0"><h1>${s.name}</h1>${d ? `<div class="muted">Sauvegardé <b class="live" data-t="${esc(d.exported_at)}">${ageTxt(d.exported_at)}</b> · export du ${dtfr(d.exported_at)} · ${esc(d.app_version || '')}${CHANGED.has(id) ? ' <span class="tag ok flash">🔄 mis à jour</span>' : ''}</div>${d.summary ? `<div style="margin-top:4px">${esc(d.summary)}</div>` : ''}` : ''}</div>${l && l.url ? `<a class="btn pri" href="${esc(l.url)}" target="_blank" rel="noopener">Ouvrir ${s.name} ↗</a>` : '<button class="btn" data-act="settings">＋ Ajouter le lien</button>'}</div>`;
-  $('#detail').innerHTML = head + body;
+  const head = `<div class="dhead"><div class="ico">${s.icon}</div><div style="flex:1;min-width:0"><h1>${s.name}</h1>${d ? `<div class="muted">Sauvegardé <b class="live" data-t="${esc(d.exported_at)}">${ageTxt(d.exported_at)}</b> · export du ${dtfr(d.exported_at)} · ${esc(d.app_version || '')}${CHANGED.has(id) ? ' <span class="tag ok flash">🔄 mis à jour</span>' : ''}</div>${d.summary ? `<div style="margin-top:4px">${esc(d.summary)}</div>` : ''}` : ''}</div>${l && l.url ? `<a class="btn pri" href="${esc(l.url)}" target="tonio_${id}">Ouvrir ${s.name} ↗</a>` : '<button class="btn" data-act="settings">＋ Ajouter le lien</button>'}</div>`;
+  $('#detail').innerHTML = head + `<p class="hint">💡 Double-clic sur une ligne, un chiffre ou une carte (ou clic sur ↗) : l’app s’ouvre directement au bon endroit.</p>` + body;
+  $('#detail').dataset.app = id;
 }
 
 /* ---------- Journal du matin ---------- */
@@ -697,13 +706,30 @@ async function journalFromFiles(list) {
 
 /* ---------- Rendu ---------- */
 function linkFor(id) { return cfg.links.find(l => l.id === id); }
+/* ---------- Ouverture d'une app au bon endroit (#tonio=<identifiant>@<vue>) ---------- */
+const SAVE_VUE = { lifeadmin: 'vue:sauvegarde', 'aide-memoire': 'vue:settings', bourse: 'vue:parametres', idees: 'vue:reglages' };
+const toRef = rid => { if (!rid) return ''; const m = /^ecart:(.+):(\d{4})$/.exec(rid); return m ? `gl:${m[1]}:Budget:${m[2]}@bvr` : rid; };
+function deepUrl(app, ref) { const l = linkFor(app); if (!l || !l.url) return ''; const base = l.url.split('#')[0]; return ref ? base + '#tonio=' + encodeURIComponent(ref) : base; }
+function openDeep(app, ref) {
+  if (!SOURCES[app]) return;
+  const u = deepUrl(app, ref);
+  if (!u) { renderNotice(`Pour ouvrir <b>${esc(SOURCES[app].name)}</b> depuis l’Accueil, ajoutez d’abord son adresse dans ⚙️ Liens & réglages.`, 'info'); openSettings(); return; }
+  window.open(u, 'tonio_' + app);   // même onglet pour une même app : pas de rechargement ni de nouveau code
+}
+const appOf = el => { const a = el.closest('[data-app]'); return a ? a.dataset.app : decodeURIComponent(location.hash.slice(1).split('/')[0]); };
+document.addEventListener('dblclick', e => {
+  const el = e.target.closest('[data-open]'); if (!el || !el.dataset.open) return;
+  e.preventDefault(); try { window.getSelection().removeAllRanges(); } catch (er) { /* */ }
+  openDeep(appOf(el), el.dataset.open);
+});
+document.addEventListener('click', e => { const el = e.target.closest('[data-go]'); if (!el) return; e.preventDefault(); e.stopPropagation(); openDeep(appOf(el), el.dataset.go); }, true);
 function renderLinks() {
   $('#links').innerHTML = cfg.links.map(l => {
     const src = SOURCES[l.id];
     const d = DATA[l.id];
     const sub = d ? `<span class="dot ${fresh(d.exported_at)}" style="display:inline-block;width:8px;height:8px;margin-right:4px"></span>${ageTxt(d.exported_at)}` : src ? src.desc : (l.url ? new URL(l.url, location.href).hostname : '');
     return l.url
-      ? `<a class="lk" href="${esc(l.url)}" target="_blank" rel="noopener"><span class="ico">${esc(l.icon || '🔗')}</span><span><b>${esc(l.name)}</b><small>${sub}</small></span></a>`
+      ? `<a class="lk" href="${esc(l.url)}" target="tonio_${esc(l.id)}"><span class="ico">${esc(l.icon || '🔗')}</span><span><b>${esc(l.name)}</b><small>${sub}</small></span></a>`
       : `<a class="lk off" href="#" data-act="settings"><span class="ico">${esc(l.icon || '🔗')}</span><span><b>${esc(l.name)}</b><small>＋ ajouter le lien</small></span></a>`;
   }).join('');
 }
@@ -719,7 +745,7 @@ function renderCards() {
   const all = [];
   $('#cards').innerHTML = ORDER.map(id => {
     const s = SOURCES[id], d = DATA[id], l = linkFor(id);
-    const open = l && l.url ? `<a class="btn sm pri" href="${esc(l.url)}" target="_blank" rel="noopener">Ouvrir ↗</a>` : `<button class="btn sm" data-act="settings">＋ Lien</button>`;
+    const open = l && l.url ? `<a class="btn sm pri" href="${esc(l.url)}" target="tonio_${id}">Ouvrir ↗</a>` : `<button class="btn sm" data-act="settings">＋ Lien</button>`;
     let body;
     if (!d) body = `<div class="empty">${SRC ? 'Aucun export trouvé dans Tonio/' + id + '/.' : 'Reliez le dossier Tonio pour voir le résumé.'}</div>`;
     else {
@@ -731,14 +757,14 @@ function renderCards() {
     const upd = CHANGED.has(id) ? ' <span class="tag ok flash">🔄 mis à jour</span>' : '';
     const foot = d ? `<div class="foot"><span><span class="dot ${fresh(d.exported_at)}" style="display:inline-block;vertical-align:middle"></span> Sauvegardé <b class="live" data-t="${esc(d.exported_at)}">${ageTxt(d.exported_at)}</b> · ${dtfr(d.exported_at)}${upd}</span><span>${esc(d.app_version || '')}</span></div>` : '';
     const more = `<a class="more" href="#${id}">Voir la page ${s.name} →</a>`;
-    return `<article class="card"><div class="top"><a class="ico" href="#${id}" title="Page détaillée">${s.icon}</a><a class="ttl" href="#${id}"><b>${s.name}</b><small>${s.desc}</small></a>${open}</div>${body}${more}${foot}</article>`;
+    return `<article class="card" data-app="${id}"><div class="top"><a class="ico" href="#${id}" title="Page détaillée">${s.icon}</a><a class="ttl" href="#${id}"><b>${s.name}</b><small>${s.desc}</small></a>${open}</div>${body}${more}${foot}</article>`;
   }).join('');
   // À regarder aujourd'hui
   if (!SRC) return;
   const staleApps = ORDER.filter(id => !DATA[id] || fresh(DATA[id].exported_at) !== 'ok');
-  const go = id => { const l = linkFor(id); return l && l.url ? ` <a class="go" href="${esc(l.url)}" target="_blank" rel="noopener" title="Ouvrir ${esc(SOURCES[id].name)}">ouvrir l’app ↗</a>` : ''; };
-  const items = all.map(x => `<a class="ti" href="#${x.id}${x.rid ? '/' + encodeURIComponent(x.rid) : ''}" title="Voir le détail">${x.a}</a>${go(x.id)}`);
-  if (staleApps.length) items.push(`🩺 Sauvegarde à refaire : ${staleApps.map(id => `<a class="ti" href="#${id}">${SOURCES[id].name}</a>${go(id)}`).join(', ')}`);
+  const go = (id, ref) => { const l = linkFor(id); return l && l.url ? ` <a class="go" href="#" data-app="${id}" data-go="${esc(ref || '')}" title="Ouvrir ${esc(SOURCES[id].name)} à cet endroit">ouvrir dans l’app ↗</a>` : ''; };
+  const items = all.map(x => `<a class="ti" href="#${x.id}${x.rid ? '/' + encodeURIComponent(x.rid) : ''}" title="Voir le détail">${x.a}</a>${go(x.id, toRef(x.rid))}`);
+  if (staleApps.length) items.push(`🩺 Sauvegarde à refaire : ${staleApps.map(id => `<a class="ti" href="#${id}">${SOURCES[id].name}</a>${go(id, SAVE_VUE[id])}`).join(', ')}`);
   $('#today').className = items.length ? '' : 'empty';
   $('#today').innerHTML = items.length ? `<ul>${items.map(i => `<li>${i}</li>`).join('')}</ul>` : '✅ Rien d’urgent : pas de retard, pas d’alerte.';
 }
